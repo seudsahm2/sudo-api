@@ -1,0 +1,22 @@
+node_modules/
+dist/
+coverage/
+*.log
+npm-debug.log*
+
+# Secrets. Only the .example files belong in the repository.
+.env
+.env.*
+!.env.example
+!.env.test.integration.example
+
+# Local content dumps written by scripts/backup-content.ts
+backups/
+
+# Prisma migrations are not used here; schema is applied with `db push`
+prisma/migrations/
+
+# Scratch
+.tmp-*
+.DS_Store
+.vscode/
