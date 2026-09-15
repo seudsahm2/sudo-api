@@ -17,32 +17,49 @@ model User {
 }
 
 model AdminUser {
-  id                     String           @id @default(cuid())
-  email                  String           @unique
-  displayName            String
-  passwordHash           String
-  isActive               Boolean          @default(true)
-  twoFactorEnabled       Boolean          @default(false)
+  id                       String              @id @default(cuid())
+  email                    String              @unique
+  displayName              String
+  passwordHash             String
+  isActive                 Boolean             @default(true)
+  twoFactorEnabled         Boolean             @default(false)
   twoFactorSecretEncrypted String?
-  twoFactorConfirmedAt   DateTime?
-  lastLoginAt            DateTime?
-  createdAt              DateTime         @default(now())
-  updatedAt              DateTime         @updatedAt
-  roles                  AdminUserRole[]
-  sessions               AdminSession[]
-  auditLogs              AdminAuditLog[]
+  twoFactorConfirmedAt     DateTime?
+  lastLoginAt              DateTime?
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
+  roles                    AdminUserRole[]
+  sessions                 AdminSession[]
+  auditLogs                AdminAuditLog[]
+  adminRecoveryCodes       AdminRecoveryCode[]
 
   @@index([isActive])
 }
 
+/// One-time codes that let an admin who has lost their password set a new one
+/// without any mail server, SMS gateway, or third-party account existing. The
+/// plaintext is shown once, when the code is issued, and only its hash is kept.
+model AdminRecoveryCode {
+  id          String    @id @default(cuid())
+  adminUserId String
+  codeHash    String    @unique
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+
+  @@index([adminUserId])
+  @@index([usedAt])
+}
+
 model AdminRole {
-  id          String               @id @default(cuid())
-  key         String               @unique
+  id          String                @id @default(cuid())
+  key         String                @unique
   name        String
   description String
-  isSystem    Boolean              @default(true)
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
+  isSystem    Boolean               @default(true)
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
   users       AdminUserRole[]
   permissions AdminRolePermission[]
 
@@ -50,44 +67,44 @@ model AdminRole {
 }
 
 model AdminPermission {
-  id          String               @id @default(cuid())
-  key         String               @unique
+  id          String                @id @default(cuid())
+  key         String                @unique
   resource    String
   action      String
   description String
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
   roles       AdminRolePermission[]
 }
 
 model AdminUserRole {
-  id          String     @id @default(cuid())
+  id          String    @id @default(cuid())
   adminUserId String
   adminRoleId String
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  adminUser   AdminUser  @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
-  role        AdminRole  @relation(fields: [adminRoleId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+  role        AdminRole @relation(fields: [adminRoleId], references: [id], onDelete: Cascade)
 
   @@unique([adminUserId, adminRoleId])
   @@index([adminRoleId])
 }
 
 model AdminRolePermission {
-  id               String          @id @default(cuid())
-  adminRoleId      String
+  id                String          @id @default(cuid())
+  adminRoleId       String
   adminPermissionId String
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-  role             AdminRole       @relation(fields: [adminRoleId], references: [id], onDelete: Cascade)
-  permission       AdminPermission @relation(fields: [adminPermissionId], references: [id], onDelete: Cascade)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  role              AdminRole       @relation(fields: [adminRoleId], references: [id], onDelete: Cascade)
+  permission        AdminPermission @relation(fields: [adminPermissionId], references: [id], onDelete: Cascade)
 
   @@unique([adminRoleId, adminPermissionId])
   @@index([adminPermissionId])
 }
 
 model AdminSession {
-  id               String     @id @default(cuid())
+  id               String          @id @default(cuid())
   adminUserId      String
   refreshTokenHash String
   expiresAt        DateTime
@@ -95,9 +112,9 @@ model AdminSession {
   lastUsedAt       DateTime?
   ipAddress        String?
   userAgent        String?
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
-  adminUser        AdminUser  @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  adminUser        AdminUser       @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
   auditLogs        AdminAuditLog[]
 
   @@index([adminUserId])
@@ -106,7 +123,7 @@ model AdminSession {
 }
 
 model AdminAuditLog {
-  id               String      @id @default(cuid())
+  id               String        @id @default(cuid())
   actorAdminUserId String?
   actorEmail       String?
   action           String
@@ -121,8 +138,8 @@ model AdminAuditLog {
   after            Json?
   metadata         Json?
   sessionId        String?
-  createdAt        DateTime    @default(now())
-  actorAdminUser   AdminUser?  @relation(fields: [actorAdminUserId], references: [id], onDelete: SetNull)
+  createdAt        DateTime      @default(now())
+  actorAdminUser   AdminUser?    @relation(fields: [actorAdminUserId], references: [id], onDelete: SetNull)
   session          AdminSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
 
   @@index([actorAdminUserId])
@@ -154,98 +171,98 @@ model SiteConfig {
 }
 
 model PrimaryNavigation {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   position  Int
   to        String
   label     String
   deletedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@unique([position])
   @@index([deletedAt])
 }
 
 model InquiryProjectType {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   position  Int
   value     String
   label     String
   deletedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@unique([position])
   @@index([deletedAt])
 }
 
 model InquiryBudgetRange {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   position  Int
   value     String
   label     String
   deletedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@unique([position])
   @@index([deletedAt])
 }
 
 model HomeManifesto {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   position  Int
   icon      String
   kicker    String
   title     String
   copy      String
   deletedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@unique([position])
   @@index([deletedAt])
 }
 
 model HomeEcosystemTag {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   position  Int
   tag       String
   deletedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@unique([position])
   @@index([deletedAt])
 }
 
 model HomeStat {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   position  Int
   label     String
   value     Int
   suffix    String?
   deletedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@unique([position])
   @@index([deletedAt])
 }
 
 model Service {
-  id           String               @id @default(cuid())
-  position     Int
-  icon         String
-  name         String
-  handle       String               @unique
-  summary      String
-  deletedAt    DateTime?
-  capabilities ServiceCapability[]
-  stackItems   ServiceStackItem[]
+  id            String                @id @default(cuid())
+  position      Int
+  icon          String
+  name          String
+  handle        String                @unique
+  summary       String
+  deletedAt     DateTime?
+  capabilities  ServiceCapability[]
+  stackItems    ServiceStackItem[]
   interconnects ServiceInterconnect[]
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
 
   @@unique([position])
   @@index([deletedAt])
@@ -288,54 +305,129 @@ model ServiceInterconnect {
 }
 
 model ServicePipelineStep {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   position  Int
   icon      String
   label     String
   step      String
   deletedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@unique([position])
   @@index([deletedAt])
 }
 
 model WorkFilter {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   position  Int
   value     String
   deletedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@unique([position])
   @@index([deletedAt])
 }
 
 model WorkProject {
-  id            String                 @id @default(cuid())
-  position      Int
-  projectKey    String                 @unique
-  title         String
-  client        String
-  year          String
-  summary       String
-  coverImageUrl String?
+  id               String                  @id @default(cuid())
+  position         Int
+  projectKey       String                  @unique
+  title            String
+  client           String
+  year             String
+  summary          String
+  coverImageUrl    String?
   // Case study body. Optional so a project can be listed before it is written up.
-  challenge     String?
-  approach      String?
-  outcome       String?
+  challenge        String?
+  approach         String?
+  outcome          String?
+  // Showcase. `surface` decides which frame the screenshots are shown in on
+  // the work page — a phone body, browser chrome, or both side by side.
+  surface          String                  @default("web")
+  liveUrl          String?
+  appStoreUrl      String?
+  playStoreUrl     String?
+  /// Something that can run inside an iframe on the work page: a web build of
+  /// the app, a hosted demo, or a device-farm embed. Falls back to liveUrl.
+  demoUrl          String?
+  // One headline result per project, shown on the showcase card.
+  metricValue      String?
+  metricLabel      String?
   // Home page curation. Replaces the old HomeFeaturedProject table, which
   // duplicated every one of these records.
-  featured         Boolean @default(false)
+  featured         Boolean                 @default(false)
   featuredPosition Int?
-  deletedAt     DateTime?
-  disciplines   WorkProjectDiscipline[]
-  createdAt     DateTime               @default(now())
-  updatedAt     DateTime               @updatedAt
+  deletedAt        DateTime?
+  disciplines      WorkProjectDiscipline[]
+  stackItems       WorkProjectStackItem[]
+  media            WorkProjectMedia[]
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
 
   @@unique([position])
+  @@index([deletedAt])
+  @@index([surface])
+}
+
+model WorkProjectStackItem {
+  id        String      @id @default(cuid())
+  projectId String
+  position  Int
+  value     String
+  project   WorkProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@unique([projectId, position])
+}
+
+/// Screenshots shown inside a device frame on the work page. Keyed by the
+/// project slug rather than its cuid, so a row can be added from the generic
+/// admin editor without looking an id up first.
+model WorkProjectMedia {
+  id         String      @id @default(cuid())
+  projectKey String
+  position   Int
+  url        String
+  /// "phone" | "browser" | "plain" — which frame the shot is drawn in.
+  kind       String      @default("browser")
+  caption    String?
+  deletedAt  DateTime?
+  project    WorkProject @relation(fields: [projectKey], references: [projectKey], onDelete: Cascade)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@unique([projectKey, position])
+  @@index([deletedAt])
+}
+
+/// A project enquiry submitted from the public site. Stored so nobody has to
+/// leave the page to send one, and so none are lost in a mailbox.
+model Inquiry {
+  id          String    @id @default(cuid())
+  reference   String    @unique
+  name        String
+  email       String
+  company     String?
+  projectType String
+  budget      String
+  message     String
+  /// Which form it came from: "home", "contact", or "project".
+  source      String    @default("contact")
+  /// Set when the enquiry starts from a specific case study.
+  projectKey  String?
+  status      String    @default("new")
+  ipHash      String?
+  userAgent   String?
+  handledAt   DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
   @@index([deletedAt])
 }
 
@@ -352,40 +444,40 @@ model WorkProjectDiscipline {
 }
 
 model LabPrinciple {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   position  Int
   icon      String
   name      String
   desc      String
   deletedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@unique([position])
   @@index([deletedAt])
 }
 
 model LabMatrixRow {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   position  Int
   label     String
   value     String
   deletedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@unique([position])
   @@index([deletedAt])
 }
 
 model LabSpec {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   position  Int
   label     String
   value     String
   deletedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@unique([position])
   @@index([deletedAt])

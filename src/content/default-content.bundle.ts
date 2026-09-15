@@ -10,7 +10,7 @@ export const defaultContentBundle = {
     responseWindow: 'Within one business day',
     statusLabel: 'Accepting new projects',
     intakeMode:
-      'Your brief is prepared here and sent from your own email app, so nothing is stored on our servers before you press send.',
+      'Enquiries are sent straight to the studio and held in our own system. Nothing is passed to a third-party form service, a mailing list, or an ad platform.',
     heroHeadline: 'Built once, properly',
     positionTitle: 'Most of the value is in deciding what not to build.',
     positionBody:
@@ -20,7 +20,7 @@ export const defaultContentBundle = {
     { to: '/', label: 'Home' },
     { to: '/services', label: 'Services' },
     { to: '/work', label: 'Work' },
-    { to: '/studio', label: 'Studio' },
+    { to: '/about', label: 'About' },
   ],
   inquiryOptions: {
     projectTypes: [
@@ -60,38 +60,9 @@ export const defaultContentBundle = {
       },
     ],
     ecosystemTags: ['Web', 'Design', 'AI', 'Video'],
-    featuredProjects: [
-      {
-        id: 'north-shield',
-        tag: 'North Shield',
-        title: 'Sovereign Banking Platform',
-        discipline: ['Web', 'Design', 'AI'],
-        year: '2026',
-        summary:
-          'End-to-end platform redesign and an agent layer for a sovereign-tier banking client.',
-        coverImageUrl: '',
-      },
-      {
-        id: 'orbital-labs',
-        tag: 'Orbital Labs',
-        title: 'Aerospace Identity System',
-        discipline: ['Design', 'Video'],
-        year: '2025',
-        summary:
-          'Identity system, brand film, and photography direction for an aerospace startup.',
-        coverImageUrl: '',
-      },
-      {
-        id: 'cipher-os',
-        tag: 'Cipher OS',
-        title: 'Agentic Workflow Engine',
-        discipline: ['AI', 'Web'],
-        year: '2026',
-        summary:
-          'Agent runtime, evaluation pipeline, and operator console for a no-code AI platform.',
-        coverImageUrl: '',
-      },
-    ],
+    // Invented work is worse than no work: if the database cannot be read,
+    // the site says nothing rather than something untrue.
+    featuredProjects: [],
     stats: [
       { label: 'Projects delivered', value: 142 },
       { label: 'Clients supported', value: 38 },
@@ -185,86 +156,7 @@ export const defaultContentBundle = {
   },
   work: {
     filters: ['All', 'Web', 'Design', 'AI', 'Video'],
-    projects: [
-      {
-        id: 'north-shield',
-        title: 'Sovereign banking platform',
-        client: 'North Shield',
-        year: '2026',
-        discipline: ['Web', 'Design', 'AI'],
-        summary:
-          'End-to-end platform redesign and AI agent layer for a sovereign-tier banking client.',
-        coverImageUrl: '',
-        challenge: '',
-        approach: '',
-        outcome: '',
-      },
-      {
-        id: 'orbital-labs',
-        title: 'Aerospace identity system',
-        client: 'Orbital Labs',
-        year: '2025',
-        discipline: ['Design', 'Video'],
-        summary:
-          'Identity system, brand film, and product photography for an aerospace startup.',
-        coverImageUrl: '',
-        challenge: '',
-        approach: '',
-        outcome: '',
-      },
-      {
-        id: 'cipher-os',
-        title: 'Agentic workflow engine',
-        client: 'Cipher OS',
-        year: '2026',
-        discipline: ['AI', 'Web'],
-        summary:
-          'Agent runtime, evaluation pipeline, and operator console for a no-code AI platform.',
-        coverImageUrl: '',
-        challenge: '',
-        approach: '',
-        outcome: '',
-      },
-      {
-        id: 'atlas-foundry',
-        title: 'Manufacturing operations platform',
-        client: 'Atlas Foundry',
-        year: '2025',
-        discipline: ['Web', 'AI'],
-        summary:
-          'Real-time floor analytics, predictive QA models, and an operator dashboard suite.',
-        coverImageUrl: '',
-        challenge: '',
-        approach: '',
-        outcome: '',
-      },
-      {
-        id: 'void-records',
-        title: 'Label identity and packaging',
-        client: 'Void Records',
-        year: '2024',
-        discipline: ['Design', 'Video'],
-        summary:
-          'Identity, packaging, and motion system for an experimental electronic label.',
-        coverImageUrl: '',
-        challenge: '',
-        approach: '',
-        outcome: '',
-      },
-      {
-        id: 'helix-md',
-        title: 'Clinical intelligence layer',
-        client: 'Helix MD',
-        year: '2026',
-        discipline: ['AI', 'Design'],
-        summary:
-          'Clinician-facing summarization layer with provenance and citation guarantees.',
-        coverImageUrl: '',
-        challenge: '',
-        approach: '',
-        outcome: '',
-      },
-    ],
+    projects: [],
   },
   lab: {
     principles: [
@@ -353,6 +245,7 @@ export type ContentBundle = {
       year: string;
       summary: string;
       coverImageUrl: string;
+      surface: string;
     }>;
     stats: ReadonlyArray<{
       label: string;
@@ -389,6 +282,15 @@ export type ContentBundle = {
       challenge: string;
       approach: string;
       outcome: string;
+      surface: string;
+      liveUrl: string;
+      appStoreUrl: string;
+      playStoreUrl: string;
+      demoUrl: string;
+      metricValue: string;
+      metricLabel: string;
+      stack: ReadonlyArray<string>;
+      gallery: ReadonlyArray<{ url: string; kind: string; caption: string }>;
     }>;
   };
   lab: {

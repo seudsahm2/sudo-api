@@ -14,7 +14,9 @@ import type { CookieSerializeOptions } from '@fastify/cookie';
 import type { FastifyReply } from 'fastify';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AdminAuthService } from './admin-auth.service';
+import { AdminRecoveryService } from './admin-recovery.service';
 import { AdminLoginDto } from './dto/admin-login.dto';
+import { AdminRecoverDto } from './dto/admin-recover.dto';
 import { AdminLogoutDto } from './dto/admin-logout.dto';
 import { AdminRefreshDto } from './dto/admin-refresh.dto';
 import { AdminTwoFactorConfirmDto } from './dto/admin-2fa-confirm.dto';
@@ -44,6 +46,7 @@ export class AdminAuthController {
 
   constructor(
     private readonly adminAuthService: AdminAuthService,
+    private readonly adminRecoveryService: AdminRecoveryService,
     private readonly configService: ConfigService,
   ) {}
 
@@ -244,6 +247,53 @@ export class AdminAuthController {
       userAgent: this.extractUserAgent(request.headers),
       requestId: undefined,
     });
+  }
+
+  /**
+   * Public on purpose: it is the way back in when the password is gone. It is
+   * safe to leave open because it still demands a secret — a one-time recovery
+   * code — and it answers every failure identically.
+   */
+  @Post('recover')
+  @ApiOperation({
+    summary: 'Set a new password using a one-time recovery code',
+  })
+  recover(
+    @Body() dto: AdminRecoverDto,
+    @Req() request: AdminHttpRequest,
+  ): Promise<{ email: string; remainingCodes: number }> {
+    this.logger.log(
+      `recover attempt ip=${request.ip ?? 'unknown'} email=${dto.email}`,
+    );
+
+    return this.adminRecoveryService.recover(dto, {
+      ipAddress: request.ip,
+      userAgent: this.extractUserAgent(request.headers),
+      requestId: undefined,
+    });
+  }
+
+  @Post('recovery-codes')
+  @ApiBearerAuth()
+  @UseGuards(AdminJwtAuthGuard)
+  @ApiOperation({
+    summary: 'Replace the recovery codes for this admin and return the new set',
+  })
+  async regenerateRecoveryCodes(
+    @CurrentAdmin() admin: AdminPrincipal,
+  ): Promise<{ codes: string[] }> {
+    const codes = await this.adminRecoveryService.issueCodes(admin.id);
+    return { codes };
+  }
+
+  @Get('recovery-codes/remaining')
+  @ApiBearerAuth()
+  @UseGuards(AdminJwtAuthGuard)
+  @ApiOperation({ summary: 'How many unused recovery codes are left' })
+  async remainingRecoveryCodes(
+    @CurrentAdmin() admin: AdminPrincipal,
+  ): Promise<{ remaining: number }> {
+    return { remaining: await this.adminRecoveryService.countRemaining(admin.id) };
   }
 
   private extractUserAgent(

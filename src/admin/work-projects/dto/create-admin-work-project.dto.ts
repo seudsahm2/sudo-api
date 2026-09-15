@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsArray,
   IsBoolean,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -15,7 +16,14 @@ import {
  * Cover images are rendered straight into an <img src>. Restricting them to
  * http(s) or a root-relative path keeps `javascript:` and `data:` payloads out.
  */
-export const MEDIA_URL_PATTERN = /^(https:\/\/|http:\/\/|\/)[^\s]*$/;
+/** An empty string is allowed: it is how the admin editor clears a field. */
+export const MEDIA_URL_PATTERN = /^$|^(https:\/\/|http:\/\/|\/)[^\s]*$/;
+
+/** Outbound links are rendered as <a href>, so they must be absolute http(s). */
+export const LINK_URL_PATTERN = /^$|^https?:\/\/[^\s]+$/;
+
+/** Decides which frame a project's screenshots are drawn in on the work page. */
+export const WORK_PROJECT_SURFACES = ['web', 'mobile', 'both'] as const;
 
 export class CreateAdminWorkProjectDto {
   @ApiProperty({ example: 0 })
@@ -29,13 +37,13 @@ export class CreateAdminWorkProjectDto {
   @MaxLength(120)
   projectKey!: string;
 
-  @ApiProperty({ example: 'North Shield - Sovereign Banking' })
+  @ApiProperty({ example: 'Sovereign banking platform' })
   @IsString()
   @MinLength(1)
   @MaxLength(160)
   title!: string;
 
-  @ApiProperty({ example: 'client/north-shield' })
+  @ApiProperty({ example: 'North Shield' })
   @IsString()
   @MinLength(1)
   @MaxLength(160)
@@ -53,7 +61,9 @@ export class CreateAdminWorkProjectDto {
   @MaxLength(500)
   summary!: string;
 
-  @ApiPropertyOptional({ example: 'https://media.sudotechlabs.com/north-shield.jpg' })
+  @ApiPropertyOptional({
+    example: 'https://media.sudotechlabs.com/north-shield.jpg',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(500)
@@ -71,32 +81,115 @@ export class CreateAdminWorkProjectDto {
   challenge?: string;
 
   @ApiPropertyOptional({
-    example: 'We ran the new platform alongside the old one behind a routing layer.',
+    example:
+      'We ran the new platform alongside the old one behind a routing layer.',
   })
   @IsOptional()
   @IsString()
   @MaxLength(2000)
   approach?: string;
 
-  @ApiPropertyOptional({ example: 'Migrated 1.2m accounts with no scheduled downtime.' })
+  @ApiPropertyOptional({
+    example: 'Migrated 1.2m accounts with no scheduled downtime.',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(2000)
   outcome?: string;
 
-  @ApiPropertyOptional({ example: false, description: 'Show on the home page.' })
+  @ApiPropertyOptional({
+    enum: WORK_PROJECT_SURFACES,
+    example: 'web',
+    description: 'Which device frame the screenshots are shown in.',
+  })
+  @IsOptional()
+  @IsIn(WORK_PROJECT_SURFACES)
+  surface?: string;
+
+  @ApiPropertyOptional({ example: 'https://northshield.com' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  @Matches(LINK_URL_PATTERN, {
+    message: 'liveUrl must be a full http(s) URL.',
+  })
+  liveUrl?: string;
+
+  @ApiPropertyOptional({ example: 'https://apps.apple.com/app/id000000000' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  @Matches(LINK_URL_PATTERN, {
+    message: 'appStoreUrl must be a full http(s) URL.',
+  })
+  appStoreUrl?: string;
+
+  @ApiPropertyOptional({
+    example: 'https://play.google.com/store/apps/details?id=com.example',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  @Matches(LINK_URL_PATTERN, {
+    message: 'playStoreUrl must be a full http(s) URL.',
+  })
+  playStoreUrl?: string;
+
+  @ApiPropertyOptional({
+    example: 'https://demo.example.com',
+    description:
+      'Something that will run inside an iframe: a web build of the app, a hosted demo, or a device-farm embed.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  @Matches(LINK_URL_PATTERN, { message: 'demoUrl must be a full http(s) URL.' })
+  demoUrl?: string;
+
+  @ApiPropertyOptional({ example: '1.2m', description: 'The figure itself.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(32)
+  metricValue?: string;
+
+  @ApiPropertyOptional({
+    example: 'accounts migrated, no downtime',
+    description: 'What the figure counts.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  metricLabel?: string;
+
+  @ApiPropertyOptional({
+    example: false,
+    description: 'Show on the home page.',
+  })
   @IsOptional()
   @IsBoolean()
   featured?: boolean;
 
-  @ApiPropertyOptional({ example: 0, description: 'Order within the home page list.' })
+  @ApiPropertyOptional({
+    example: 0,
+    description: 'Order within the home page list.',
+  })
   @IsOptional()
   @IsInt()
   @Min(0)
   featuredPosition?: number;
 
-  @ApiProperty({ type: [String], example: ['web', 'design', 'ai'] })
+  @ApiProperty({ type: [String], example: ['Web', 'Design', 'AI'] })
   @IsArray()
   @IsString({ each: true })
   disciplines!: string[];
+
+  @ApiPropertyOptional({
+    type: [String],
+    example: ['React Native', 'Postgres', 'Stripe'],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @MaxLength(60, { each: true })
+  stack?: string[];
 }

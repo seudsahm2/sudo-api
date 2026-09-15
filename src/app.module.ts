@@ -11,6 +11,7 @@ import { AuthModule } from './auth/auth.module';
 import { AdminModule } from './admin/admin.module';
 import { HealthModule } from './health/health.module';
 import { ContentModule } from './content/content.module';
+import { InquiriesModule } from './inquiries/inquiries.module';
 import { MediaModule } from './media/media.module';
 import { RequestPathLoggerMiddleware } from './common/middleware/request-path-logger.middleware';
 
@@ -27,6 +28,7 @@ import { RequestPathLoggerMiddleware } from './common/middleware/request-path-lo
     AdminModule,
     HealthModule,
     ContentModule,
+    InquiriesModule,
     MediaModule,
   ],
 })

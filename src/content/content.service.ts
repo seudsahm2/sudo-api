@@ -217,6 +217,7 @@ export class ContentService {
           year: project.year,
           summary: project.summary,
           coverImageUrl: project.coverImageUrl ?? '',
+          surface: project.surface,
         })),
         stats: stats.map((item) => ({
           label: item.label,
@@ -286,7 +287,7 @@ export class ContentService {
 
   async getWork() {
     try {
-      const [filters, projects] = await Promise.all([
+      const [filters, projects, media] = await Promise.all([
         this.prisma.workFilter.findMany({
           where: {
             deletedAt: null,
@@ -302,9 +303,33 @@ export class ContentService {
             disciplines: {
               orderBy: { position: 'asc' },
             },
+            stackItems: {
+              orderBy: { position: 'asc' },
+            },
           },
         }),
+        // Read in one query and grouped in memory: a gallery per project would
+        // be one round trip each, and there is no page size here to hold it
+        // down.
+        this.prisma.workProjectMedia.findMany({
+          where: { deletedAt: null },
+          orderBy: [{ projectKey: 'asc' }, { position: 'asc' }],
+        }),
       ]);
+
+      const galleryByProject = new Map<
+        string,
+        Array<{ url: string; kind: string; caption: string }>
+      >();
+      for (const shot of media) {
+        const gallery = galleryByProject.get(shot.projectKey) ?? [];
+        gallery.push({
+          url: shot.url,
+          kind: shot.kind,
+          caption: shot.caption ?? '',
+        });
+        galleryByProject.set(shot.projectKey, gallery);
+      }
 
       return {
         filters: filters.map((item) => item.value),
@@ -319,6 +344,15 @@ export class ContentService {
           challenge: project.challenge ?? '',
           approach: project.approach ?? '',
           outcome: project.outcome ?? '',
+          surface: project.surface,
+          liveUrl: project.liveUrl ?? '',
+          appStoreUrl: project.appStoreUrl ?? '',
+          playStoreUrl: project.playStoreUrl ?? '',
+          demoUrl: project.demoUrl ?? '',
+          metricValue: project.metricValue ?? '',
+          metricLabel: project.metricLabel ?? '',
+          stack: project.stackItems.map((entry) => entry.value),
+          gallery: galleryByProject.get(project.projectKey) ?? [],
         })),
       };
     } catch {

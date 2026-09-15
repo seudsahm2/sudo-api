@@ -14,12 +14,28 @@ import {
   AdminWorkProjectStatusFilter,
   AdminSortOrder,
 } from './dto/admin-work-project-list-query.dto';
-import { CreateAdminWorkProjectDto } from './dto/create-admin-work-project.dto';
+import {
+  CreateAdminWorkProjectDto,
+  WORK_PROJECT_SURFACES,
+} from './dto/create-admin-work-project.dto';
 import {
   AdminWorkProjectBulkAction,
   AdminWorkProjectBulkDto,
 } from './dto/admin-work-project-bulk.dto';
 import { UpdateAdminWorkProjectDto } from './dto/update-admin-work-project.dto';
+
+/** An optional field arriving empty means "no value", not an empty string. */
+function emptyToNull(value?: string): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
+/** Same, for a PATCH: an absent field is left alone, an empty one is cleared. */
+function emptyToUndefinedNull(value?: string): string | null | undefined {
+  if (value === undefined) return undefined;
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
 
 interface AdminRequestContext {
   ipAddress?: string;
@@ -39,9 +55,17 @@ export interface AdminWorkProjectSnapshot {
   challenge: string | null;
   approach: string | null;
   outcome: string | null;
+  surface: string;
+  liveUrl: string | null;
+  appStoreUrl: string | null;
+  playStoreUrl: string | null;
+  demoUrl: string | null;
+  metricValue: string | null;
+  metricLabel: string | null;
   featured: boolean;
   featuredPosition: number | null;
   disciplines: string[];
+  stack: string[];
   deletedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -59,9 +83,17 @@ export interface AdminWorkProjectModel {
   challenge: string | null;
   approach: string | null;
   outcome: string | null;
+  surface: string;
+  liveUrl: string | null;
+  appStoreUrl: string | null;
+  playStoreUrl: string | null;
+  demoUrl: string | null;
+  metricValue: string | null;
+  metricLabel: string | null;
   featured: boolean;
   featuredPosition: number | null;
   disciplines: string[];
+  stack: string[];
   isDeleted: boolean;
   deletedAt: string | null;
   createdAt: string;
@@ -100,9 +132,27 @@ export class AdminWorkProjectService {
         { key: 'challenge', type: 'string', required: false, maxLength: 2000 },
         { key: 'approach', type: 'string', required: false, maxLength: 2000 },
         { key: 'outcome', type: 'string', required: false, maxLength: 2000 },
+        {
+          key: 'surface',
+          type: 'enum',
+          required: false,
+          options: [...WORK_PROJECT_SURFACES],
+        },
+        { key: 'liveUrl', type: 'string', required: false, maxLength: 500 },
+        { key: 'appStoreUrl', type: 'string', required: false, maxLength: 500 },
+        {
+          key: 'playStoreUrl',
+          type: 'string',
+          required: false,
+          maxLength: 500,
+        },
+        { key: 'demoUrl', type: 'string', required: false, maxLength: 500 },
+        { key: 'metricValue', type: 'string', required: false, maxLength: 32 },
+        { key: 'metricLabel', type: 'string', required: false, maxLength: 120 },
         { key: 'featured', type: 'boolean', required: false },
         { key: 'featuredPosition', type: 'number', required: false },
         { key: 'disciplines', type: 'string[]', required: true },
+        { key: 'stack', type: 'string[]', required: false },
         { key: 'deletedAt', type: 'datetime', readOnly: true },
         { key: 'createdAt', type: 'datetime', readOnly: true },
         { key: 'updatedAt', type: 'datetime', readOnly: true },
@@ -139,6 +189,9 @@ export class AdminWorkProjectService {
           disciplines: {
             orderBy: { position: 'asc' },
           },
+          stackItems: {
+            orderBy: { position: 'asc' },
+          },
         },
       }),
       this.prisma.workProject.count({ where }),
@@ -160,6 +213,9 @@ export class AdminWorkProjectService {
       where: { id },
       include: {
         disciplines: {
+          orderBy: { position: 'asc' },
+        },
+        stackItems: {
           orderBy: { position: 'asc' },
         },
       },
@@ -189,6 +245,13 @@ export class AdminWorkProjectService {
         challenge: dto.challenge ?? null,
         approach: dto.approach ?? null,
         outcome: dto.outcome ?? null,
+        surface: dto.surface ?? 'web',
+        liveUrl: emptyToNull(dto.liveUrl),
+        appStoreUrl: emptyToNull(dto.appStoreUrl),
+        playStoreUrl: emptyToNull(dto.playStoreUrl),
+        demoUrl: emptyToNull(dto.demoUrl),
+        metricValue: emptyToNull(dto.metricValue),
+        metricLabel: emptyToNull(dto.metricLabel),
         featured: dto.featured ?? false,
         featuredPosition: dto.featuredPosition ?? null,
         disciplines: {
@@ -197,9 +260,18 @@ export class AdminWorkProjectService {
             value,
           })),
         },
+        stackItems: {
+          create: (dto.stack ?? []).map((value, index) => ({
+            position: index,
+            value,
+          })),
+        },
       },
       include: {
         disciplines: {
+          orderBy: { position: 'asc' },
+        },
+        stackItems: {
           orderBy: { position: 'asc' },
         },
       },
@@ -234,6 +306,9 @@ export class AdminWorkProjectService {
         disciplines: {
           orderBy: { position: 'asc' },
         },
+        stackItems: {
+          orderBy: { position: 'asc' },
+        },
       },
     });
 
@@ -253,10 +328,17 @@ export class AdminWorkProjectService {
           client: dto.client,
           year: dto.year,
           summary: dto.summary,
-          coverImageUrl: dto.coverImageUrl,
+          coverImageUrl: emptyToUndefinedNull(dto.coverImageUrl),
           challenge: dto.challenge,
           approach: dto.approach,
           outcome: dto.outcome,
+          surface: dto.surface,
+          liveUrl: emptyToUndefinedNull(dto.liveUrl),
+          appStoreUrl: emptyToUndefinedNull(dto.appStoreUrl),
+          playStoreUrl: emptyToUndefinedNull(dto.playStoreUrl),
+          demoUrl: emptyToUndefinedNull(dto.demoUrl),
+          metricValue: emptyToUndefinedNull(dto.metricValue),
+          metricLabel: emptyToUndefinedNull(dto.metricLabel),
           featured: dto.featured,
           featuredPosition: dto.featuredPosition,
         },
@@ -275,10 +357,26 @@ export class AdminWorkProjectService {
         });
       }
 
+      if (dto.stack) {
+        await tx.workProjectStackItem.deleteMany({
+          where: { projectId: id },
+        });
+        await tx.workProjectStackItem.createMany({
+          data: dto.stack.map((value, index) => ({
+            projectId: id,
+            position: index,
+            value,
+          })),
+        });
+      }
+
       return tx.workProject.findUniqueOrThrow({
         where: { id: project.id },
         include: {
           disciplines: {
+            orderBy: { position: 'asc' },
+          },
+          stackItems: {
             orderBy: { position: 'asc' },
           },
         },
@@ -314,6 +412,9 @@ export class AdminWorkProjectService {
         disciplines: {
           orderBy: { position: 'asc' },
         },
+        stackItems: {
+          orderBy: { position: 'asc' },
+        },
       },
     });
 
@@ -329,6 +430,9 @@ export class AdminWorkProjectService {
       data: { deletedAt: new Date() },
       include: {
         disciplines: {
+          orderBy: { position: 'asc' },
+        },
+        stackItems: {
           orderBy: { position: 'asc' },
         },
       },
@@ -366,6 +470,9 @@ export class AdminWorkProjectService {
         disciplines: {
           orderBy: { position: 'asc' },
         },
+        stackItems: {
+          orderBy: { position: 'asc' },
+        },
       },
     });
 
@@ -381,6 +488,9 @@ export class AdminWorkProjectService {
       data: { deletedAt: null },
       include: {
         disciplines: {
+          orderBy: { position: 'asc' },
+        },
+        stackItems: {
           orderBy: { position: 'asc' },
         },
       },
@@ -497,6 +607,13 @@ export class AdminWorkProjectService {
             },
           },
         },
+        {
+          stackItems: {
+            some: {
+              value: { contains: query.search, mode: 'insensitive' },
+            },
+          },
+        },
       ];
     }
 
@@ -527,12 +644,20 @@ export class AdminWorkProjectService {
     challenge: string | null;
     approach: string | null;
     outcome: string | null;
+    surface: string;
+    liveUrl: string | null;
+    appStoreUrl: string | null;
+    playStoreUrl: string | null;
+    demoUrl: string | null;
+    metricValue: string | null;
+    metricLabel: string | null;
     featured: boolean;
     featuredPosition: number | null;
     deletedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
     disciplines: Array<{ value: string }>;
+    stackItems: Array<{ value: string }>;
   }): Prisma.InputJsonObject {
     return {
       id: item.id,
@@ -546,9 +671,17 @@ export class AdminWorkProjectService {
       challenge: item.challenge,
       approach: item.approach,
       outcome: item.outcome,
+      surface: item.surface,
+      liveUrl: item.liveUrl,
+      appStoreUrl: item.appStoreUrl,
+      playStoreUrl: item.playStoreUrl,
+      demoUrl: item.demoUrl,
+      metricValue: item.metricValue,
+      metricLabel: item.metricLabel,
       featured: item.featured,
       featuredPosition: item.featuredPosition,
       disciplines: item.disciplines.map((discipline) => discipline.value),
+      stack: item.stackItems.map((entry) => entry.value),
       deletedAt: item.deletedAt?.toISOString() ?? null,
       createdAt: item.createdAt.toISOString(),
       updatedAt: item.updatedAt.toISOString(),
@@ -567,12 +700,20 @@ export class AdminWorkProjectService {
     challenge: string | null;
     approach: string | null;
     outcome: string | null;
+    surface: string;
+    liveUrl: string | null;
+    appStoreUrl: string | null;
+    playStoreUrl: string | null;
+    demoUrl: string | null;
+    metricValue: string | null;
+    metricLabel: string | null;
     featured: boolean;
     featuredPosition: number | null;
     deletedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
     disciplines: Array<{ value: string }>;
+    stackItems: Array<{ value: string }>;
   }): AdminWorkProjectModel {
     return {
       id: item.id,
@@ -586,9 +727,17 @@ export class AdminWorkProjectService {
       challenge: item.challenge,
       approach: item.approach,
       outcome: item.outcome,
+      surface: item.surface,
+      liveUrl: item.liveUrl,
+      appStoreUrl: item.appStoreUrl,
+      playStoreUrl: item.playStoreUrl,
+      demoUrl: item.demoUrl,
+      metricValue: item.metricValue,
+      metricLabel: item.metricLabel,
       featured: item.featured,
       featuredPosition: item.featuredPosition,
       disciplines: item.disciplines.map((discipline) => discipline.value),
+      stack: item.stackItems.map((entry) => entry.value),
       isDeleted: item.deletedAt !== null,
       deletedAt: item.deletedAt?.toISOString() ?? null,
       createdAt: item.createdAt.toISOString(),
