@@ -13,10 +13,35 @@ import rateLimit from '@fastify/rate-limit';
 import multipart from '@fastify/multipart';
 import { AppModule } from './app.module';
 
+/**
+ * Whether to believe `X-Forwarded-For`.
+ *
+ * On a managed host the app never sees a client address directly — every
+ * request arrives from the platform's proxy. Without this, `request.ip` is that
+ * one proxy for everybody, which quietly turns every per-IP limit into a global
+ * one: a single shared rate limit for all traffic, five enquiries an hour for
+ * the entire world, eight recovery attempts for everyone at once.
+ *
+ * It is not on by default outside production, because trusting the header when
+ * nothing is in front of the app lets any caller claim any address.
+ */
+function resolveTrustProxy(): boolean | number {
+  const configured = process.env.TRUST_PROXY?.trim();
+
+  if (configured === undefined || configured === '') {
+    return process.env.NODE_ENV === 'production';
+  }
+  if (configured === 'true') return true;
+  if (configured === 'false') return false;
+
+  const hops = Number(configured);
+  return Number.isInteger(hops) && hops > 0 ? hops : false;
+}
+
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter(),
+    new FastifyAdapter({ trustProxy: resolveTrustProxy() }),
   );
   const config = app.get(ConfigService);
 

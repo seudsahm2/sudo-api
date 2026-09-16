@@ -293,7 +293,9 @@ export class AdminAuthController {
   async remainingRecoveryCodes(
     @CurrentAdmin() admin: AdminPrincipal,
   ): Promise<{ remaining: number }> {
-    return { remaining: await this.adminRecoveryService.countRemaining(admin.id) };
+    return {
+      remaining: await this.adminRecoveryService.countRemaining(admin.id),
+    };
   }
 
   private extractUserAgent(
@@ -312,31 +314,34 @@ export class AdminAuthController {
     accessToken: string,
     refreshToken: string,
   ) {
+    const scope = this.cookieScope();
+
     reply.setCookie(ADMIN_ACCESS_TOKEN_COOKIE, accessToken, {
       httpOnly: true,
-      sameSite: 'lax',
-      secure: this.isProduction(),
+      ...scope,
       path: ADMIN_ACCESS_TOKEN_COOKIE_PATH,
       maxAge: this.cookieMaxAge('ADMIN_ACCESS_TOKEN_EXPIRES_IN'),
     } satisfies CookieSerializeOptions);
 
     reply.setCookie(ADMIN_REFRESH_TOKEN_COOKIE, refreshToken, {
       httpOnly: true,
-      sameSite: 'lax',
-      secure: this.isProduction(),
+      ...scope,
       path: ADMIN_REFRESH_TOKEN_COOKIE_PATH,
       maxAge: this.cookieMaxAge('ADMIN_REFRESH_TOKEN_EXPIRES_IN'),
     } satisfies CookieSerializeOptions);
   }
 
   private clearSessionCookies(reply: FastifyReply) {
+    // Cleared with the same scope they were set with, or the browser keeps them.
+    const scope = this.cookieScope();
+
     reply.clearCookie(ADMIN_ACCESS_TOKEN_COOKIE, {
+      ...scope,
       path: ADMIN_ACCESS_TOKEN_COOKIE_PATH,
-      secure: this.isProduction(),
     } satisfies CookieSerializeOptions);
     reply.clearCookie(ADMIN_REFRESH_TOKEN_COOKIE, {
+      ...scope,
       path: ADMIN_REFRESH_TOKEN_COOKIE_PATH,
-      secure: this.isProduction(),
     } satisfies CookieSerializeOptions);
   }
 
@@ -352,5 +357,36 @@ export class AdminAuthController {
 
   private isProduction() {
     return this.configService.get<string>('NODE_ENV') === 'production';
+  }
+
+  /**
+   * How the session cookies are scoped.
+   *
+   * The admin console stores no tokens of its own: these cookies are the
+   * session. So when the site and the API are on different registrable domains
+   * — a Vercel host calling a Render host, for instance — the cookies are
+   * third-party, and `SameSite=Lax` means the browser silently refuses to send
+   * them. Login appears to work and every request after it is anonymous.
+   *
+   * `SameSite=None` fixes that, and requires `Secure`. Better still is a shared
+   * parent domain with ADMIN_COOKIE_DOMAIN set, which keeps the cookies
+   * first-party and survives browsers that block third-party cookies outright.
+   */
+  private cookieScope(): Pick<
+    CookieSerializeOptions,
+    'sameSite' | 'secure' | 'domain'
+  > {
+    const configured = this.configService.get<'lax' | 'none' | 'strict'>(
+      'ADMIN_COOKIE_SAMESITE',
+    );
+    const sameSite = configured ?? (this.isProduction() ? 'none' : 'lax');
+    const domain = this.configService.get<string>('ADMIN_COOKIE_DOMAIN');
+
+    return {
+      sameSite,
+      // SameSite=None is only honoured on a secure connection.
+      secure: sameSite === 'none' || this.isProduction(),
+      ...(domain ? { domain } : {}),
+    };
   }
 }
