@@ -64,6 +64,27 @@ const envSchema = z.object({
     .int()
     .positive()
     .default(10 * 1024 * 1024),
+
+  // Uploaded web builds of apps (flutter build web, zipped). They go to the
+  // bucket above when it is configured, otherwise to this folder on disk —
+  // fine for development, lost on hosts with a throwaway disk.
+  APP_BUILDS_DIR: z.string().default('storage/app-builds'),
+  // Where uploaded apps are served from: a different origin from the API
+  // (https://apps.example.com, or http://127.0.0.1:4000 in development), so
+  // an app's code never shares an origin with the admin session cookies. The
+  // apps' own backends (Appwrite, Firebase …) must allow this origin. Unset,
+  // apps are served from the API's own address.
+  APP_BUILDS_ORIGIN: z.string().url().optional(),
+  APP_BUILD_MAX_UPLOAD_BYTES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(100 * 1024 * 1024),
+  APP_BUILD_MAX_UNPACKED_BYTES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(300 * 1024 * 1024),
 });
 
 export type AppEnv = z.infer<typeof envSchema>;

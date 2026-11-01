@@ -6,7 +6,12 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { FastifyRequest } from 'fastify';
 import { AdminPermissions } from '../admin/decorators/admin-permissions.decorator';
 import { CurrentAdmin } from '../admin/decorators/current-admin.decorator';
@@ -49,7 +54,9 @@ export class AdminMediaController {
     const file = await request.file();
 
     if (!file) {
-      throw new BadRequestException('Attach an image file under the "file" field.');
+      throw new BadRequestException(
+        'Attach an image file under the "file" field.',
+      );
     }
 
     const requestedFolder = file.fields?.folder;
@@ -69,10 +76,16 @@ export class AdminMediaController {
       body = await file.toBuffer();
     } catch {
       // @fastify/multipart throws once the configured fileSize cap is passed.
-      throw new BadRequestException('That image is larger than the upload limit.');
+      throw new BadRequestException(
+        'That image is larger than the upload limit.',
+      );
     }
 
-    const uploaded = await this.mediaService.upload(body, file.filename, folder);
+    const uploaded = await this.mediaService.upload(
+      body,
+      file.filename,
+      folder,
+    );
 
     await this.auditService.record({
       actorAdminUserId: actor.id,

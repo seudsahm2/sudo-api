@@ -23,8 +23,6 @@ const HARD_DELETE_PROTECTED_MODELS = new Set([
   'LabSpec',
 ]);
 
-const HARD_DELETE_ACTIONS = new Set(['delete', 'deleteMany']);
-
 @Injectable()
 export class PrismaService
   extends PrismaClient

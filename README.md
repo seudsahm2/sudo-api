@@ -62,8 +62,10 @@ Swagger docs: `http://localhost:4000/api/docs`
 - `npm run prisma:migrate:dev` - create/apply local migration
 - `npm run prisma:migrate:deploy` - apply migrations in deployment
 - `npm run admin:createsuperuser` - create/update an admin user from terminal
-- `npm run content:backup` - export the managed content tables to a JSON snapshot
-- `npm run content:restore` - restore the managed content tables from a JSON snapshot
+- `npm run content:backup` - export every content table and every enquiry to a JSON snapshot
+- `npm run content:restore` - restore from a JSON snapshot. Replaces only the tables the file contains, keeps the rest, never deletes an enquiry, and saves the current state to `backups/pre-restore-*.json` first
+- `npm run content:copy-backfill` - insert any site-text key the database is missing (never overwrites an edited value); add `-- --export ../sudo-hq/src/content/copy-defaults.ts` to refresh the site's fallback wording
+- `npm run content:real-content -- confirm` - archive the seeded placeholder projects and figures, and switch the home figures to ones counted from published work
 
 ## Create Admin User (Terminal)
 

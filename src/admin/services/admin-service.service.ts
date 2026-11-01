@@ -48,6 +48,12 @@ export interface AdminServiceModel {
   name: string;
   handle: string;
   summary: string;
+  slug: string | null;
+  tagline: string | null;
+  imageUrl: string | null;
+  deliverables: string[];
+  timeline: string | null;
+  startingFrom: string | null;
   capabilities: string[];
   stackItems: string[];
   interconnects: string[];
@@ -67,6 +73,12 @@ export interface AdminServiceListResponse {
   };
 }
 
+/** Absent leaves a field alone; empty clears it. */
+function clearable(value?: string): string | null | undefined {
+  if (value === undefined) return undefined;
+  return value.trim() || null;
+}
+
 @Injectable()
 export class AdminServiceService {
   constructor(
@@ -84,6 +96,12 @@ export class AdminServiceService {
         { key: 'name', type: 'string', required: true, maxLength: 160 },
         { key: 'handle', type: 'string', required: true, maxLength: 160 },
         { key: 'summary', type: 'string', required: true, maxLength: 500 },
+        { key: 'slug', type: 'string', required: false, maxLength: 80 },
+        { key: 'tagline', type: 'string', required: false, maxLength: 160 },
+        { key: 'imageUrl', type: 'string', required: false, maxLength: 500 },
+        { key: 'deliverables', type: 'string[]', required: false },
+        { key: 'timeline', type: 'string', required: false, maxLength: 40 },
+        { key: 'startingFrom', type: 'string', required: false, maxLength: 40 },
         { key: 'capabilities', type: 'string[]', required: true },
         { key: 'stackItems', type: 'string[]', required: true },
         { key: 'interconnects', type: 'string[]', required: true },
@@ -173,6 +191,8 @@ export class AdminServiceService {
     actor: AdminPrincipal,
     context?: AdminRequestContext,
   ): Promise<AdminServiceModel> {
+    await this.assertSlugFree(dto.slug);
+
     const created = await this.prisma.service.create({
       data: {
         position: dto.position,
@@ -180,6 +200,14 @@ export class AdminServiceService {
         name: dto.name,
         handle: dto.handle,
         summary: dto.summary,
+        slug: dto.slug?.trim() || null,
+        tagline: dto.tagline?.trim() || null,
+        imageUrl: dto.imageUrl?.trim() || null,
+        deliverables: (dto.deliverables ?? [])
+          .map((entry) => entry.trim())
+          .filter(Boolean),
+        timeline: dto.timeline?.trim() || null,
+        startingFrom: dto.startingFrom?.trim() || null,
         capabilities: {
           create: dto.capabilities.map((value, index) => ({
             position: index,
@@ -255,6 +283,7 @@ export class AdminServiceService {
     }
 
     this.assertOptimisticConcurrency(existing.updatedAt, dto.expectedUpdatedAt);
+    await this.assertSlugFree(dto.slug, id);
 
     const updated = await this.prisma.$transaction(async (tx) => {
       const service = await tx.service.update({
@@ -265,6 +294,14 @@ export class AdminServiceService {
           name: dto.name,
           handle: dto.handle,
           summary: dto.summary,
+          slug: clearable(dto.slug),
+          tagline: clearable(dto.tagline),
+          imageUrl: clearable(dto.imageUrl),
+          deliverables: dto.deliverables
+            ?.map((entry) => entry.trim())
+            .filter(Boolean),
+          timeline: clearable(dto.timeline),
+          startingFrom: clearable(dto.startingFrom),
         },
       });
 
@@ -587,6 +624,12 @@ export class AdminServiceService {
       name: item.name,
       handle: item.handle,
       summary: item.summary,
+      slug: item.slug,
+      tagline: item.tagline,
+      imageUrl: item.imageUrl,
+      deliverables: item.deliverables,
+      timeline: item.timeline,
+      startingFrom: item.startingFrom,
       capabilities: item.capabilities.map((row) => row.value),
       stackItems: item.stackItems.map((row) => row.value),
       interconnects: item.interconnects.map((row) => row.value),
@@ -604,6 +647,12 @@ export class AdminServiceService {
       name: item.name,
       handle: item.handle,
       summary: item.summary,
+      slug: item.slug,
+      tagline: item.tagline,
+      imageUrl: item.imageUrl,
+      deliverables: item.deliverables,
+      timeline: item.timeline,
+      startingFrom: item.startingFrom,
       capabilities: item.capabilities.map((row) => row.value),
       stackItems: item.stackItems.map((row) => row.value),
       interconnects: item.interconnects.map((row) => row.value),
@@ -612,5 +661,28 @@ export class AdminServiceService {
       createdAt: item.createdAt.toISOString(),
       updatedAt: item.updatedAt.toISOString(),
     };
+  }
+
+  /**
+   * Two services cannot share a landing page address. Checked here rather than
+   * by a unique index, which could not be added to the live table without a
+   * data-loss prompt.
+   */
+  private async assertSlugFree(slug?: string, exceptId?: string) {
+    const value = slug?.trim();
+    if (!value) return;
+    const clash = await this.prisma.service.findFirst({
+      where: {
+        slug: value,
+        deletedAt: null,
+        ...(exceptId ? { id: { not: exceptId } } : {}),
+      },
+      select: { name: true },
+    });
+    if (clash) {
+      throw new ConflictException(
+        `${clash.name} already uses the address /services/${value}.`,
+      );
+    }
   }
 }

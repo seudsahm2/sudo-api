@@ -12,7 +12,17 @@ import {
 import { MEDIA_URL_PATTERN } from '../../work-projects/dto/create-admin-work-project.dto';
 
 /** Which frame the shot is drawn inside on the work page. */
-export const WORK_PROJECT_MEDIA_KINDS = ['browser', 'phone', 'plain'] as const;
+/**
+ * `fullpage` is a whole web page captured top to bottom, which scrolls inside
+ * the browser frame; `tablet` is drawn in a tablet body.
+ */
+export const WORK_PROJECT_MEDIA_KINDS = [
+  'browser',
+  'phone',
+  'tablet',
+  'fullpage',
+  'plain',
+] as const;
 
 export class CreateAdminWorkProjectMediaDto {
   @ApiProperty({
@@ -50,4 +60,25 @@ export class CreateAdminWorkProjectMediaDto {
   @IsString()
   @MaxLength(160)
   caption?: string;
+
+  @ApiPropertyOptional({
+    example: 'Pricing',
+    description: 'Which page of a website this capture shows.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  pageLabel?: string;
+
+  @ApiPropertyOptional({
+    example: 'https://media.example.com/loop.mp4',
+    description: 'A short muted loop shown in place of the still.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  @Matches(MEDIA_URL_PATTERN, {
+    message: 'videoUrl must be an http(s) URL or a root-relative path.',
+  })
+  videoUrl?: string;
 }

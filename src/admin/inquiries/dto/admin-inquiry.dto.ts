@@ -21,6 +21,7 @@ export const INQUIRY_STATUSES = [
   'new',
   'reading',
   'replied',
+  'proposal',
   'won',
   'declined',
 ] as const;
@@ -79,14 +80,22 @@ export class AdminInquiryListQueryDto {
   sortOrder?: AdminSortOrder = AdminSortOrder.DESC;
 }
 
-@HasAtLeastOneField(['status'], {
-  message: 'Only the status of an enquiry can be changed.',
+@HasAtLeastOneField(['status', 'notes'], {
+  message: 'Only the status and notes of an enquiry can be changed.',
 })
 export class UpdateAdminInquiryDto {
   @ApiPropertyOptional({ enum: INQUIRY_STATUSES, example: 'replied' })
   @IsOptional()
   @IsIn(INQUIRY_STATUSES)
   status?: string;
+
+  @ApiPropertyOptional({
+    example: 'Called on Tuesday; sending a proposal Friday.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(4000)
+  notes?: string;
 
   @ApiPropertyOptional({
     example: '2026-04-22T15:36:10.220Z',

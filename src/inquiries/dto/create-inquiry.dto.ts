@@ -9,7 +9,13 @@ import {
   MinLength,
 } from 'class-validator';
 
-export const INQUIRY_SOURCES = ['home', 'contact', 'project'] as const;
+export const INQUIRY_SOURCES = [
+  'home',
+  'contact',
+  'project',
+  'service',
+  'links',
+] as const;
 
 /** Collapses control characters and runs of whitespace before validation. */
 const clean = ({ value }: { value: unknown }): unknown => {
@@ -84,6 +90,50 @@ export class CreateInquiryDto {
   @IsString()
   @MaxLength(120)
   projectKey?: string;
+
+  @ApiPropertyOptional({ example: 'Within a month' })
+  @IsOptional()
+  @Transform(clean)
+  @IsString()
+  @MaxLength(80)
+  timeline?: string;
+
+  // Attribution. The site keeps these from the visit's landing URL, so the
+  // admin can see which channel actually produces work.
+  @ApiPropertyOptional({ example: 'tiktok' })
+  @IsOptional()
+  @Transform(clean)
+  @IsString()
+  @MaxLength(120)
+  utmSource?: string;
+
+  @ApiPropertyOptional({ example: 'social' })
+  @IsOptional()
+  @Transform(clean)
+  @IsString()
+  @MaxLength(120)
+  utmMedium?: string;
+
+  @ApiPropertyOptional({ example: 'launch-week' })
+  @IsOptional()
+  @Transform(clean)
+  @IsString()
+  @MaxLength(120)
+  utmCampaign?: string;
+
+  @ApiPropertyOptional({ example: 'https://www.tiktok.com/' })
+  @IsOptional()
+  @Transform(clean)
+  @IsString()
+  @MaxLength(500)
+  referrer?: string;
+
+  @ApiPropertyOptional({ example: '/work/delivery-app' })
+  @IsOptional()
+  @Transform(clean)
+  @IsString()
+  @MaxLength(300)
+  landingPath?: string;
 
   @ApiPropertyOptional({
     description:

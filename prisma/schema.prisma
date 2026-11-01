@@ -149,23 +149,43 @@ model AdminAuditLog {
 }
 
 model SiteConfig {
-  id             String    @id @default(cuid())
-  name           String
-  shortName      String
-  descriptor     String
-  defaultTitle   String
-  description    String
-  contactEmail   String
-  responseWindow String
-  statusLabel    String
-  intakeMode     String
+  id                  String    @id @default(cuid())
+  name                String
+  shortName           String
+  descriptor          String
+  defaultTitle        String
+  description         String
+  contactEmail        String
+  responseWindow      String
+  statusLabel         String
+  intakeMode          String
   // Home page copy. Editable rather than hardcoded in the frontend.
-  heroHeadline   String    @default("Built once, properly")
-  positionTitle  String    @default("Most of the value is in deciding what not to build.")
-  positionBody   String    @default("")
-  deletedAt      DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  heroHeadline        String    @default("Built once, properly")
+  positionTitle       String    @default("Most of the value is in deciding what not to build.")
+  positionBody        String    @default("")
+  // Where people can reach the studio outside the form. Empty hides the link.
+  socialTiktok        String?
+  socialInstagram     String?
+  socialFacebook      String?
+  socialX             String?
+  socialLinkedin      String?
+  socialYoutube       String?
+  /// International format without spaces or "+", e.g. 251911234567.
+  whatsappNumber      String?
+  /// Username without the "@".
+  telegramHandle      String?
+  // The strip above the header.
+  announcementEnabled Boolean   @default(false)
+  announcementText    String?
+  announcementLink    String?
+  /// Plausible-style analytics: the domain as registered with the provider.
+  analyticsDomain     String?
+  analyticsScriptUrl  String?
+  /// Fallback share image for pages without one of their own.
+  ogImageUrl          String?
+  deletedAt           DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   @@index([deletedAt])
 }
@@ -242,6 +262,9 @@ model HomeStat {
   label     String
   value     Int
   suffix    String?
+  /// "manual" uses `value` as typed. Anything else is counted from published
+  /// work when the content bundle is built, and `value` is ignored.
+  source    String    @default("manual")
   deletedAt DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -257,6 +280,15 @@ model Service {
   name          String
   handle        String                @unique
   summary       String
+  /// Address of the service's own landing page: /services/<slug>.
+  slug          String?
+  tagline       String?
+  imageUrl      String?
+  deliverables  String[]              @default([])
+  /// How long an engagement of this kind usually takes, e.g. "6-10 weeks".
+  timeline      String?
+  /// Optional price anchor, e.g. "$4,000". Empty hides it.
+  startingFrom  String?
   deletedAt     DateTime?
   capabilities  ServiceCapability[]
   stackItems    ServiceStackItem[]
@@ -359,16 +391,38 @@ model WorkProject {
   // duplicated every one of these records.
   featured         Boolean                 @default(false)
   featuredPosition Int?
+  /// "draft" | "published". Only published projects reach the public site,
+  /// so a project can be built up in admin without appearing half-finished.
+  status           String                  @default("draft")
+  publishedAt      DateTime?
+  tagline          String?
+  industry         String?
+  /// Any of "android", "ios", "web". Decides `surface` when set.
+  platforms        String[]                @default([])
+  /// How long the build took, e.g. "12 weeks".
+  duration         String?
+  /// The product's own colour as #rrggbb. Tints the preview room.
+  brandColor       String?
+  /// The uploaded web build of the app (flutter build web, zipped), served
+  /// by the API at /api/apps/<appBuildId>/. Null when none is uploaded.
+  appBuildId       String?
+  appBuildFiles    Int?
+  appBuildBytes    Int?
+  appBuildFilename String?
+  appBuildAt       DateTime?
   deletedAt        DateTime?
   disciplines      WorkProjectDiscipline[]
   stackItems       WorkProjectStackItem[]
   media            WorkProjectMedia[]
+  highlights       WorkProjectHighlight[]
+  screens          PrototypeScreen[]
   createdAt        DateTime                @default(now())
   updatedAt        DateTime                @updatedAt
 
   @@unique([position])
   @@index([deletedAt])
   @@index([surface])
+  @@index([status])
 }
 
 model WorkProjectStackItem {
@@ -394,6 +448,11 @@ model WorkProjectMedia {
   /// "phone" | "browser" | "plain" — which frame the shot is drawn in.
   kind       String      @default("browser")
   caption    String?
+  /// Which page of a website this capture shows ("Home", "Pricing"). Shots
+  /// sharing a label are the same page at different sizes.
+  pageLabel  String?
+  /// A short muted loop shown in place of the still where supported.
+  videoUrl   String?
   deletedAt  DateTime?
   project    WorkProject @relation(fields: [projectKey], references: [projectKey], onDelete: Cascade)
   createdAt  DateTime    @default(now())
@@ -418,6 +477,16 @@ model Inquiry {
   source      String    @default("contact")
   /// Set when the enquiry starts from a specific case study.
   projectKey  String?
+  /// How soon they want to start, as chosen on the form.
+  timeline    String?
+  // Attribution, captured from the visit that led to the enquiry.
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  referrer    String?
+  landingPath String?
+  /// Private notes from whoever is handling it.
+  notes       String?
   status      String    @default("new")
   ipHash      String?
   userAgent   String?
@@ -441,6 +510,149 @@ model WorkProjectDiscipline {
   updatedAt DateTime    @updatedAt
 
   @@unique([projectId, position])
+}
+
+/// One headline feature of a project, shown as a step in its case study's
+/// pinned highlight scene.
+model WorkProjectHighlight {
+  id         String      @id @default(cuid())
+  projectKey String
+  position   Int
+  title      String
+  body       String
+  /// The screen shown while this highlight is on stage.
+  mediaUrl   String?
+  deletedAt  DateTime?
+  project    WorkProject @relation(fields: [projectKey], references: [projectKey], onDelete: Cascade, onUpdate: Cascade)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@index([projectKey])
+  @@index([deletedAt])
+}
+
+/// One screen of a tap-through app prototype.
+model PrototypeScreen {
+  id            String             @id @default(cuid())
+  projectKey    String
+  /// Stable name hotspots point at, e.g. "home" or "checkout".
+  screenKey     String
+  position      Int
+  title         String
+  imageUrl      String
+  /// Natural pixel size of the image, so the frame can be laid out before it loads.
+  width         Int
+  height        Int
+  isStart       Boolean            @default(false)
+  /// A screen taller than the phone scrolls inside it.
+  scrollable    Boolean            @default(false)
+  /// Colour of the status bar icons drawn over this screen: "dark" | "light".
+  statusBarTone String             @default("dark")
+  deletedAt     DateTime?
+  project       WorkProject        @relation(fields: [projectKey], references: [projectKey], onDelete: Cascade, onUpdate: Cascade)
+  hotspots      PrototypeHotspot[]
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  @@unique([projectKey, screenKey])
+  @@index([deletedAt])
+}
+
+/// A tappable area on a prototype screen. Coordinates are fractions of the
+/// screen image (0-1), so they hold at any rendered size.
+model PrototypeHotspot {
+  id              String          @id @default(cuid())
+  screenId        String
+  position        Int
+  x               Float
+  y               Float
+  w               Float
+  h               Float
+  /// "goto" | "back" | "url"
+  action          String          @default("goto")
+  targetScreenKey String?
+  url             String?
+  /// "push" | "modal" | "fade" | "none"
+  transition      String          @default("push")
+  label           String?
+  deletedAt       DateTime?
+  screen          PrototypeScreen @relation(fields: [screenId], references: [id], onDelete: Cascade)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([screenId])
+  @@index([deletedAt])
+}
+
+/// Every piece of fixed wording on the public site, keyed by where it appears
+/// ("home.hero.eyebrow"). One table instead of one per sentence.
+model SiteCopy {
+  id        String    @id @default(cuid())
+  key       String    @unique
+  page      String
+  section   String
+  label     String
+  value     String
+  /// "text" | "longtext" | "url"
+  kind      String    @default("text")
+  helpText  String?
+  position  Int       @default(0)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([page])
+  @@index([deletedAt])
+}
+
+model Testimonial {
+  id         String    @id @default(cuid())
+  position   Int
+  quote      String
+  name       String
+  role       String
+  company    String
+  avatarUrl  String?
+  /// Ties the quote to a case study, where it is shown as well.
+  projectKey String?
+  featured   Boolean   @default(true)
+  deletedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([deletedAt])
+  @@index([projectKey])
+}
+
+/// A client shown on the proof wall, with the result the work produced.
+model ClientLogo {
+  id           String    @id @default(cuid())
+  position     Int
+  name         String
+  logoUrl      String?
+  siteUrl      String?
+  outcomeValue String?
+  outcomeLabel String?
+  deletedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([deletedAt])
+}
+
+model Faq {
+  id        String    @id @default(cuid())
+  position  Int
+  /// "home" | "services" | "contact" | "service:<slug>"
+  scope     String    @default("home")
+  question  String
+  answer    String
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([scope])
+  @@index([deletedAt])
 }
 
 model LabPrinciple {

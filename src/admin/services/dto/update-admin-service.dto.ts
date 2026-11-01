@@ -1,17 +1,20 @@
-﻿import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ArrayMaxSize,
   ArrayMinSize,
   IsArray,
+  IsISO8601,
   IsInt,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
   Min,
   MinLength,
-  IsISO8601,
 } from 'class-validator';
 import { HasAtLeastOneField } from '../../validators/has-at-least-one-field.decorator';
+import { MEDIA_URL_PATTERN } from '../../work-projects/dto/create-admin-work-project.dto';
+import { SERVICE_SLUG_PATTERN } from './create-admin-service.dto';
 
 @HasAtLeastOneField(
   [
@@ -23,6 +26,12 @@ import { HasAtLeastOneField } from '../../validators/has-at-least-one-field.deco
     'capabilities',
     'stackItems',
     'interconnects',
+    'slug',
+    'tagline',
+    'imageUrl',
+    'deliverables',
+    'timeline',
+    'startingFrom',
   ],
   { message: 'Provide at least one mutable field to update.' },
 )
@@ -62,6 +71,58 @@ export class UpdateAdminServiceDto {
   @MinLength(1)
   @MaxLength(500)
   summary?: string;
+
+  @ApiPropertyOptional({
+    example: 'android-app-development',
+    description: 'Address of the landing page: /services/<slug>.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  @Matches(SERVICE_SLUG_PATTERN, {
+    message: 'slug must be lower case words joined by hyphens.',
+  })
+  slug?: string;
+
+  @ApiPropertyOptional({
+    example: 'Android and iOS from one Flutter codebase.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  tagline?: string;
+
+  @ApiPropertyOptional({ example: 'https://media.example.com/service.jpg' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  @Matches(MEDIA_URL_PATTERN, {
+    message: 'imageUrl must be an http(s) URL or a root-relative path.',
+  })
+  imageUrl?: string;
+
+  @ApiPropertyOptional({
+    type: [String],
+    example: ['Play Store release', 'Admin dashboard', 'Source code'],
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(30)
+  @IsString({ each: true })
+  @MaxLength(160, { each: true })
+  deliverables?: string[];
+
+  @ApiPropertyOptional({ example: '6-10 weeks' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  timeline?: string;
+
+  @ApiPropertyOptional({ example: '$4,000' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  startingFrom?: string;
 
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()

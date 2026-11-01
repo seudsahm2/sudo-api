@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ContentService } from './content.service';
 
@@ -41,5 +41,13 @@ export class ContentController {
   @ApiOperation({ summary: 'Return lab page content' })
   async getLab() {
     return this.contentService.getLab();
+  }
+
+  @Get('prototypes/:projectKey')
+  @ApiOperation({
+    summary: "Return a published project's tap-through prototype",
+  })
+  async getPrototype(@Param('projectKey') projectKey: string) {
+    return this.contentService.getPrototype(projectKey);
   }
 }

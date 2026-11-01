@@ -5,6 +5,8 @@ import { PassportModule } from '@nestjs/passport';
 import type { StringValue } from 'ms';
 import { AdminAuditService } from './admin-audit.service';
 import { AdminAuditModule } from './audit/admin-audit.module';
+import { ADMIN_COLLECTION_MODULES } from './collections/admin-collections.modules';
+import { AdminOverviewModule } from './overview/admin-overview.module';
 import { AdminAuthController } from './admin-auth.controller';
 import { AdminAuthService } from './admin-auth.service';
 import { AdminRecoveryService } from './admin-recovery.service';
@@ -62,6 +64,8 @@ import { AdminWorkProjectModule } from './work-projects/admin-work-project.modul
     AdminWorkFilterModule,
     AdminWorkProjectModule,
     AdminWorkProjectMediaModule,
+    ...ADMIN_COLLECTION_MODULES,
+    AdminOverviewModule,
   ],
   controllers: [AdminAuthController, AdminNavigationController],
   providers: [

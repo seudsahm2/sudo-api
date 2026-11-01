@@ -5,7 +5,14 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  DeleteObjectsCommand,
+  GetObjectCommand,
+  ListObjectsV2Command,
+  NoSuchKey,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { randomBytes } from 'node:crypto';
 
 export interface UploadedMedia {
@@ -158,6 +165,81 @@ export class MediaService {
       bytes: body.length,
       contentType: signature.contentType,
     };
+  }
+
+  /**
+   * Raw object access, for callers that keep files of their own in the bucket
+   * (app builds). Keys must already be safe; nothing here checks them.
+   */
+  async putObject(
+    key: string,
+    body: Buffer,
+    contentType: string,
+    cacheControl?: string,
+  ): Promise<void> {
+    await this.requireClient().send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        Body: body,
+        ContentType: contentType,
+        CacheControl: cacheControl,
+      }),
+    );
+  }
+
+  /** The object's address on the bucket's public (CDN) URL. */
+  publicUrlFor(key: string): string {
+    return this.toPublicUrl(key);
+  }
+
+  async getObject(key: string): Promise<Buffer | null> {
+    try {
+      const result = await this.requireClient().send(
+        new GetObjectCommand({ Bucket: this.bucket, Key: key }),
+      );
+      return result.Body
+        ? Buffer.from(await result.Body.transformToByteArray())
+        : null;
+    } catch (error) {
+      if (error instanceof NoSuchKey) return null;
+      throw error;
+    }
+  }
+
+  async deletePrefix(prefix: string): Promise<void> {
+    const client = this.requireClient();
+    let token: string | undefined;
+    do {
+      const page = await client.send(
+        new ListObjectsV2Command({
+          Bucket: this.bucket,
+          Prefix: prefix,
+          ContinuationToken: token,
+        }),
+      );
+      const keys = (page.Contents ?? []).flatMap((item) =>
+        item.Key ? [{ Key: item.Key }] : [],
+      );
+      if (keys.length > 0) {
+        await client.send(
+          new DeleteObjectsCommand({
+            Bucket: this.bucket,
+            Delete: { Objects: keys },
+          }),
+        );
+      }
+      token = page.IsTruncated ? page.NextContinuationToken : undefined;
+    } while (token);
+  }
+
+  private requireClient(): S3Client {
+    if (!this.client) {
+      throw new ServiceUnavailableException(
+        'Object storage is not configured on this server.',
+      );
+    }
+    return this.client;
   }
 
   /**

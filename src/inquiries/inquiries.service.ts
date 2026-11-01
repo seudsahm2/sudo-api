@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { createHash, randomInt } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { InquiryNotifierService } from './inquiry-notifier.service';
 import { CreateInquiryDto } from './dto/create-inquiry.dto';
 
 export interface InquiryReceipt {
@@ -16,12 +17,20 @@ const MAX_TRACKED_SENDERS = 5000;
 
 const REFERENCE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
+function optional(value?: string): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
 @Injectable()
 export class InquiriesService {
   private readonly logger = new Logger(InquiriesService.name);
   private readonly recentBySender = new Map<string, number[]>();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifier: InquiryNotifierService,
+  ) {}
 
   async submit(
     dto: CreateInquiryDto,
@@ -51,13 +60,38 @@ export class InquiriesService {
         message: dto.message,
         source: dto.source ?? 'contact',
         projectKey: dto.projectKey?.trim() ? dto.projectKey.trim() : null,
+        timeline: optional(dto.timeline),
+        utmSource: optional(dto.utmSource)?.toLowerCase() ?? null,
+        utmMedium: optional(dto.utmMedium)?.toLowerCase() ?? null,
+        utmCampaign: optional(dto.utmCampaign),
+        // Only a real web address is worth keeping; anything else is noise.
+        referrer: /^https?:\/\//i.test(dto.referrer ?? '')
+          ? optional(dto.referrer)
+          : null,
+        landingPath: dto.landingPath?.startsWith('/')
+          ? optional(dto.landingPath)
+          : null,
         ipHash: senderKey,
         userAgent: meta.userAgent?.slice(0, 400) ?? null,
       },
-      select: { reference: true, createdAt: true },
+      select: {
+        reference: true,
+        createdAt: true,
+        name: true,
+        email: true,
+        company: true,
+        projectType: true,
+        budget: true,
+        timeline: true,
+        message: true,
+        source: true,
+        utmSource: true,
+        utmCampaign: true,
+      },
     });
 
     this.logger.log(`Enquiry ${inquiry.reference} received from ${dto.email}`);
+    this.notifier.notify(inquiry);
 
     return {
       reference: inquiry.reference,

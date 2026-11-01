@@ -16,6 +16,8 @@ import {
 } from './dto/admin-work-project-list-query.dto';
 import {
   CreateAdminWorkProjectDto,
+  WORK_PROJECT_PLATFORMS,
+  WORK_PROJECT_STATUSES,
   WORK_PROJECT_SURFACES,
 } from './dto/create-admin-work-project.dto';
 import {
@@ -35,6 +37,18 @@ function emptyToUndefinedNull(value?: string): string | null | undefined {
   if (value === undefined) return undefined;
   const trimmed = value.trim();
   return trimmed ? trimmed : null;
+}
+
+/**
+ * The frame follows from where the product runs, so the two can never
+ * disagree. No platforms recorded means "keep whatever surface was set".
+ */
+function surfaceFor(platforms?: string[]): string | undefined {
+  if (!platforms || platforms.length === 0) return undefined;
+  const web = platforms.includes('web');
+  const mobile = platforms.includes('android') || platforms.includes('ios');
+  if (web && mobile) return 'both';
+  return mobile ? 'mobile' : 'web';
 }
 
 interface AdminRequestContext {
@@ -64,6 +78,13 @@ export interface AdminWorkProjectSnapshot {
   metricLabel: string | null;
   featured: boolean;
   featuredPosition: number | null;
+  status: string;
+  publishedAt: string | null;
+  tagline: string | null;
+  industry: string | null;
+  platforms: string[];
+  duration: string | null;
+  brandColor: string | null;
   disciplines: string[];
   stack: string[];
   deletedAt: string | null;
@@ -92,6 +113,13 @@ export interface AdminWorkProjectModel {
   metricLabel: string | null;
   featured: boolean;
   featuredPosition: number | null;
+  status: string;
+  publishedAt: string | null;
+  tagline: string | null;
+  industry: string | null;
+  platforms: string[];
+  duration: string | null;
+  brandColor: string | null;
   disciplines: string[];
   stack: string[];
   isDeleted: boolean;
@@ -128,7 +156,12 @@ export class AdminWorkProjectService {
         { key: 'client', type: 'string', required: true, maxLength: 160 },
         { key: 'year', type: 'string', required: true, maxLength: 32 },
         { key: 'summary', type: 'string', required: true, maxLength: 500 },
-        { key: 'coverImageUrl', type: 'string', required: false, maxLength: 500 },
+        {
+          key: 'coverImageUrl',
+          type: 'string',
+          required: false,
+          maxLength: 500,
+        },
         { key: 'challenge', type: 'string', required: false, maxLength: 2000 },
         { key: 'approach', type: 'string', required: false, maxLength: 2000 },
         { key: 'outcome', type: 'string', required: false, maxLength: 2000 },
@@ -149,6 +182,23 @@ export class AdminWorkProjectService {
         { key: 'demoUrl', type: 'string', required: false, maxLength: 500 },
         { key: 'metricValue', type: 'string', required: false, maxLength: 32 },
         { key: 'metricLabel', type: 'string', required: false, maxLength: 120 },
+        {
+          key: 'status',
+          type: 'enum',
+          required: false,
+          options: [...WORK_PROJECT_STATUSES],
+        },
+        { key: 'tagline', type: 'string', required: false, maxLength: 160 },
+        { key: 'industry', type: 'string', required: false, maxLength: 80 },
+        {
+          key: 'platforms',
+          type: 'string[]',
+          required: false,
+          options: [...WORK_PROJECT_PLATFORMS],
+        },
+        { key: 'duration', type: 'string', required: false, maxLength: 40 },
+        { key: 'brandColor', type: 'string', required: false, maxLength: 7 },
+        { key: 'publishedAt', type: 'datetime', readOnly: true },
         { key: 'featured', type: 'boolean', required: false },
         { key: 'featuredPosition', type: 'number', required: false },
         { key: 'disciplines', type: 'string[]', required: true },
@@ -245,7 +295,14 @@ export class AdminWorkProjectService {
         challenge: dto.challenge ?? null,
         approach: dto.approach ?? null,
         outcome: dto.outcome ?? null,
-        surface: dto.surface ?? 'web',
+        surface: surfaceFor(dto.platforms) ?? dto.surface ?? 'web',
+        status: dto.status ?? 'draft',
+        publishedAt: dto.status === 'published' ? new Date() : null,
+        tagline: emptyToNull(dto.tagline),
+        industry: emptyToNull(dto.industry),
+        platforms: dto.platforms ?? [],
+        duration: emptyToNull(dto.duration),
+        brandColor: emptyToNull(dto.brandColor)?.toUpperCase() ?? null,
         liveUrl: emptyToNull(dto.liveUrl),
         appStoreUrl: emptyToNull(dto.appStoreUrl),
         playStoreUrl: emptyToNull(dto.playStoreUrl),
@@ -332,7 +389,24 @@ export class AdminWorkProjectService {
           challenge: dto.challenge,
           approach: dto.approach,
           outcome: dto.outcome,
-          surface: dto.surface,
+          surface: surfaceFor(dto.platforms) ?? dto.surface,
+          status: dto.status,
+          // Stamped the first time it goes live, and kept through later
+          // unpublish/republish so "new" badges stay honest.
+          publishedAt:
+            dto.status === 'published' && !existing.publishedAt
+              ? new Date()
+              : undefined,
+          tagline: emptyToUndefinedNull(dto.tagline),
+          industry: emptyToUndefinedNull(dto.industry),
+          platforms: dto.platforms,
+          duration: emptyToUndefinedNull(dto.duration),
+          // An empty value clears the colour; `?.` alone would turn that
+          // null into undefined and leave the old colour in place.
+          brandColor:
+            dto.brandColor === undefined
+              ? undefined
+              : (emptyToNull(dto.brandColor)?.toUpperCase() ?? null),
           liveUrl: emptyToUndefinedNull(dto.liveUrl),
           appStoreUrl: emptyToUndefinedNull(dto.appStoreUrl),
           playStoreUrl: emptyToUndefinedNull(dto.playStoreUrl),
@@ -653,6 +727,13 @@ export class AdminWorkProjectService {
     metricLabel: string | null;
     featured: boolean;
     featuredPosition: number | null;
+    status: string;
+    publishedAt: Date | null;
+    tagline: string | null;
+    industry: string | null;
+    platforms: string[];
+    duration: string | null;
+    brandColor: string | null;
     deletedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
@@ -680,6 +761,13 @@ export class AdminWorkProjectService {
       metricLabel: item.metricLabel,
       featured: item.featured,
       featuredPosition: item.featuredPosition,
+      status: item.status,
+      publishedAt: item.publishedAt?.toISOString() ?? null,
+      tagline: item.tagline,
+      industry: item.industry,
+      platforms: item.platforms,
+      duration: item.duration,
+      brandColor: item.brandColor,
       disciplines: item.disciplines.map((discipline) => discipline.value),
       stack: item.stackItems.map((entry) => entry.value),
       deletedAt: item.deletedAt?.toISOString() ?? null,
@@ -709,6 +797,13 @@ export class AdminWorkProjectService {
     metricLabel: string | null;
     featured: boolean;
     featuredPosition: number | null;
+    status: string;
+    publishedAt: Date | null;
+    tagline: string | null;
+    industry: string | null;
+    platforms: string[];
+    duration: string | null;
+    brandColor: string | null;
     deletedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
@@ -736,6 +831,13 @@ export class AdminWorkProjectService {
       metricLabel: item.metricLabel,
       featured: item.featured,
       featuredPosition: item.featuredPosition,
+      status: item.status,
+      publishedAt: item.publishedAt?.toISOString() ?? null,
+      tagline: item.tagline,
+      industry: item.industry,
+      platforms: item.platforms,
+      duration: item.duration,
+      brandColor: item.brandColor,
       disciplines: item.disciplines.map((discipline) => discipline.value),
       stack: item.stackItems.map((entry) => entry.value),
       isDeleted: item.deletedAt !== null,

@@ -14,9 +14,12 @@ import { HasAtLeastOneField } from '../../validators/has-at-least-one-field.deco
 import { MEDIA_URL_PATTERN } from '../../work-projects/dto/create-admin-work-project.dto';
 import { WORK_PROJECT_MEDIA_KINDS } from './create-admin-work-project-media.dto';
 
-@HasAtLeastOneField(['projectKey', 'position', 'url', 'kind', 'caption'], {
-  message: 'Provide at least one mutable field to update.',
-})
+@HasAtLeastOneField(
+  ['projectKey', 'position', 'url', 'kind', 'caption', 'pageLabel', 'videoUrl'],
+  {
+    message: 'Provide at least one mutable field to update.',
+  },
+)
 export class UpdateAdminWorkProjectMediaDto {
   @ApiPropertyOptional({ example: 'north-shield' })
   @IsOptional()
@@ -52,6 +55,27 @@ export class UpdateAdminWorkProjectMediaDto {
   @IsString()
   @MaxLength(160)
   caption?: string;
+
+  @ApiPropertyOptional({
+    example: 'Pricing',
+    description: 'Which page of a website this capture shows.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  pageLabel?: string;
+
+  @ApiPropertyOptional({
+    example: 'https://media.example.com/loop.mp4',
+    description: 'A short muted loop shown in place of the still.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  @Matches(MEDIA_URL_PATTERN, {
+    message: 'videoUrl must be an http(s) URL or a root-relative path.',
+  })
+  videoUrl?: string;
 
   @ApiPropertyOptional({
     example: '2026-04-22T15:36:10.220Z',

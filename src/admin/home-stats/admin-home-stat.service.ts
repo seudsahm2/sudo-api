@@ -13,7 +13,10 @@ import {
   AdminHomeStatStatusFilter,
   AdminSortOrder,
 } from './dto/admin-home-stat-list-query.dto';
-import { CreateAdminHomeStatDto } from './dto/create-admin-home-stat.dto';
+import {
+  CreateAdminHomeStatDto,
+  HOME_STAT_SOURCES,
+} from './dto/create-admin-home-stat.dto';
 import { UpdateAdminHomeStatDto } from './dto/update-admin-home-stat.dto';
 import {
   AdminHomeStatBulkAction,
@@ -32,6 +35,7 @@ export interface AdminHomeStatModel {
   label: string;
   value: number;
   suffix: string | null;
+  source: string;
   isDeleted: boolean;
   deletedAt: string | null;
   createdAt: string;
@@ -62,7 +66,13 @@ export class AdminHomeStatService {
         { key: 'id', type: 'string', readOnly: true },
         { key: 'position', type: 'number', required: true },
         { key: 'label', type: 'string', required: true, maxLength: 120 },
-        { key: 'value', type: 'number', required: true },
+        {
+          key: 'source',
+          type: 'enum',
+          required: false,
+          options: [...HOME_STAT_SOURCES],
+        },
+        { key: 'value', type: 'number', required: false },
         { key: 'suffix', type: 'string', required: false, maxLength: 16 },
         { key: 'deletedAt', type: 'datetime', readOnly: true },
         { key: 'createdAt', type: 'datetime', readOnly: true },
@@ -130,8 +140,9 @@ export class AdminHomeStatService {
       data: {
         position: dto.position,
         label: dto.label,
-        value: dto.value,
+        value: dto.value ?? 0,
         suffix: dto.suffix,
+        source: dto.source ?? 'manual',
       },
     });
 
@@ -170,6 +181,7 @@ export class AdminHomeStatService {
         label: dto.label,
         value: dto.value,
         suffix: dto.suffix,
+        source: dto.source,
       },
     });
 
@@ -353,6 +365,7 @@ export class AdminHomeStatService {
     label: string;
     value: number;
     suffix: string | null;
+    source: string;
     deletedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
@@ -363,6 +376,7 @@ export class AdminHomeStatService {
       label: item.label,
       value: item.value,
       suffix: item.suffix,
+      source: item.source,
       deletedAt: item.deletedAt?.toISOString() ?? null,
       createdAt: item.createdAt.toISOString(),
       updatedAt: item.updatedAt.toISOString(),
@@ -375,6 +389,7 @@ export class AdminHomeStatService {
     label: string;
     value: number;
     suffix: string | null;
+    source: string;
     deletedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
@@ -385,6 +400,7 @@ export class AdminHomeStatService {
       label: item.label,
       value: item.value,
       suffix: item.suffix,
+      source: item.source,
       isDeleted: item.deletedAt !== null,
       deletedAt: item.deletedAt?.toISOString() ?? null,
       createdAt: item.createdAt.toISOString(),

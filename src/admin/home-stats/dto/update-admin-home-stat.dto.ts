@@ -1,5 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -7,6 +8,7 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
+import { HOME_STAT_SOURCES } from './create-admin-home-stat.dto';
 
 export class UpdateAdminHomeStatDto {
   @ApiPropertyOptional({ example: 1 })
@@ -33,4 +35,14 @@ export class UpdateAdminHomeStatDto {
   @MinLength(1)
   @MaxLength(16)
   suffix?: string;
+
+  @ApiPropertyOptional({
+    enum: HOME_STAT_SOURCES,
+    example: 'projects',
+    description:
+      'manual shows the value as typed; anything else is counted from published work.',
+  })
+  @IsOptional()
+  @IsIn(HOME_STAT_SOURCES)
+  source?: string;
 }

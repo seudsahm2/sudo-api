@@ -54,8 +54,11 @@ async function bootstrap() {
     .filter(Boolean);
   const isProduction = config.get<string>('NODE_ENV') === 'production';
 
-  await app.register(cors, {
-    origin: (origin, callback) => {
+  const siteCors = {
+    origin: (
+      origin: string | undefined,
+      callback: (error: Error | null, allow: boolean) => void,
+    ) => {
       if (!origin) {
         callback(null, true);
         return;
@@ -79,6 +82,22 @@ async function bootstrap() {
     credentials: true,
     methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  };
+  // Uploaded app builds run on an opaque origin (see AppBuildServeController),
+  // so their requests for their own files arrive as `Origin: null`. Those
+  // files are public and answer anyone, without credentials.
+  await app.register(cors, {
+    delegator: (request, callback) => {
+      if (request.url?.startsWith('/api/apps/')) {
+        callback(null, {
+          origin: '*',
+          credentials: false,
+          methods: ['GET', 'HEAD'],
+        });
+        return;
+      }
+      callback(null, siteCors);
+    },
   });
   const rateLimitMax = isProduction
     ? config.getOrThrow<number>('RATE_LIMIT_MAX')
@@ -86,6 +105,8 @@ async function bootstrap() {
   await app.register(rateLimit, {
     max: rateLimitMax,
     timeWindow: config.getOrThrow<string>('RATE_LIMIT_TIME_WINDOW'),
+    // One start of an uploaded app is dozens of file requests.
+    allowList: (request) => request.url.startsWith('/api/apps/'),
   });
 
   // One file per request, capped. The media controller rejects anything that

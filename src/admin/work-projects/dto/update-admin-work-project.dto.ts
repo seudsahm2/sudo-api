@@ -14,8 +14,11 @@ import {
 } from 'class-validator';
 import { HasAtLeastOneField } from '../../validators/has-at-least-one-field.decorator';
 import {
+  BRAND_COLOR_PATTERN,
   LINK_URL_PATTERN,
   MEDIA_URL_PATTERN,
+  WORK_PROJECT_PLATFORMS,
+  WORK_PROJECT_STATUSES,
   WORK_PROJECT_SURFACES,
 } from './create-admin-work-project.dto';
 
@@ -42,6 +45,12 @@ import {
     'featuredPosition',
     'disciplines',
     'stack',
+    'status',
+    'tagline',
+    'industry',
+    'platforms',
+    'duration',
+    'brandColor',
   ],
   { message: 'Provide at least one mutable field to update.' },
 )
@@ -129,6 +138,52 @@ export class UpdateAdminWorkProjectDto {
   @IsOptional()
   @IsIn(WORK_PROJECT_SURFACES)
   surface?: string;
+
+  @ApiPropertyOptional({
+    enum: WORK_PROJECT_STATUSES,
+    example: 'draft',
+    description: 'Only published projects appear on the public site.',
+  })
+  @IsOptional()
+  @IsIn(WORK_PROJECT_STATUSES)
+  status?: string;
+
+  @ApiPropertyOptional({ example: 'Groceries at your door in 30 minutes.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  tagline?: string;
+
+  @ApiPropertyOptional({ example: 'Retail' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  industry?: string;
+
+  @ApiPropertyOptional({
+    type: [String],
+    enum: WORK_PROJECT_PLATFORMS,
+    example: ['android', 'ios'],
+    description: 'Where it runs. Decides the device frame when set.',
+  })
+  @IsOptional()
+  @IsArray()
+  @IsIn(WORK_PROJECT_PLATFORMS, { each: true })
+  platforms?: string[];
+
+  @ApiPropertyOptional({ example: '12 weeks' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  duration?: string;
+
+  @ApiPropertyOptional({ example: '#17573F' })
+  @IsOptional()
+  @IsString()
+  @Matches(BRAND_COLOR_PATTERN, {
+    message: 'brandColor must be a colour like #17573F.',
+  })
+  brandColor?: string;
 
   @ApiPropertyOptional({ example: 'https://northshield.com' })
   @IsOptional()

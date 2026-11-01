@@ -25,6 +25,15 @@ export const LINK_URL_PATTERN = /^$|^https?:\/\/[^\s]+$/;
 /** Decides which frame a project's screenshots are drawn in on the work page. */
 export const WORK_PROJECT_SURFACES = ['web', 'mobile', 'both'] as const;
 
+/** Only `published` projects are served to the public site. */
+export const WORK_PROJECT_STATUSES = ['draft', 'published'] as const;
+
+/** Where a product runs. Decides `surface` whenever it is set. */
+export const WORK_PROJECT_PLATFORMS = ['android', 'ios', 'web'] as const;
+
+/** A product colour, or empty to clear it. */
+export const BRAND_COLOR_PATTERN = /^$|^#[0-9a-fA-F]{6}$/;
+
 export class CreateAdminWorkProjectDto {
   @ApiProperty({ example: 0 })
   @IsInt()
@@ -105,6 +114,52 @@ export class CreateAdminWorkProjectDto {
   @IsOptional()
   @IsIn(WORK_PROJECT_SURFACES)
   surface?: string;
+
+  @ApiPropertyOptional({
+    enum: WORK_PROJECT_STATUSES,
+    example: 'draft',
+    description: 'Only published projects appear on the public site.',
+  })
+  @IsOptional()
+  @IsIn(WORK_PROJECT_STATUSES)
+  status?: string;
+
+  @ApiPropertyOptional({ example: 'Groceries at your door in 30 minutes.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  tagline?: string;
+
+  @ApiPropertyOptional({ example: 'Retail' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  industry?: string;
+
+  @ApiPropertyOptional({
+    type: [String],
+    enum: WORK_PROJECT_PLATFORMS,
+    example: ['android', 'ios'],
+    description: 'Where it runs. Decides the device frame when set.',
+  })
+  @IsOptional()
+  @IsArray()
+  @IsIn(WORK_PROJECT_PLATFORMS, { each: true })
+  platforms?: string[];
+
+  @ApiPropertyOptional({ example: '12 weeks' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  duration?: string;
+
+  @ApiPropertyOptional({ example: '#17573F' })
+  @IsOptional()
+  @IsString()
+  @Matches(BRAND_COLOR_PATTERN, {
+    message: 'brandColor must be a colour like #17573F.',
+  })
+  brandColor?: string;
 
   @ApiPropertyOptional({ example: 'https://northshield.com' })
   @IsOptional()

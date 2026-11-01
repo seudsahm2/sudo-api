@@ -13,6 +13,8 @@ import { HealthModule } from './health/health.module';
 import { ContentModule } from './content/content.module';
 import { InquiriesModule } from './inquiries/inquiries.module';
 import { MediaModule } from './media/media.module';
+import { AppBuildsModule } from './app-builds/app-builds.module';
+import { OgModule } from './og/og.module';
 import { RequestPathLoggerMiddleware } from './common/middleware/request-path-logger.middleware';
 
 @Module({
@@ -30,6 +32,8 @@ import { RequestPathLoggerMiddleware } from './common/middleware/request-path-lo
     ContentModule,
     InquiriesModule,
     MediaModule,
+    AppBuildsModule,
+    OgModule,
   ],
 })
 export class AppModule implements NestModule {

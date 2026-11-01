@@ -36,6 +36,13 @@ export interface AdminInquiryModel {
   message: string;
   source: string;
   projectKey: string | null;
+  timeline: string | null;
+  utmSource: string | null;
+  utmMedium: string | null;
+  utmCampaign: string | null;
+  referrer: string | null;
+  landingPath: string | null;
+  notes: string | null;
   status: string;
   handledAt: string | null;
   isDeleted: boolean;
@@ -65,6 +72,13 @@ type InquiryRow = {
   message: string;
   source: string;
   projectKey: string | null;
+  timeline: string | null;
+  utmSource: string | null;
+  utmMedium: string | null;
+  utmCampaign: string | null;
+  referrer: string | null;
+  landingPath: string | null;
+  notes: string | null;
   status: string;
   handledAt: Date | null;
   deletedAt: Date | null;
@@ -98,6 +112,13 @@ export class AdminInquiryService {
         { key: 'message', type: 'string', readOnly: true },
         { key: 'source', type: 'string', readOnly: true },
         { key: 'projectKey', type: 'string', readOnly: true },
+        { key: 'timeline', type: 'string', readOnly: true },
+        { key: 'utmSource', type: 'string', readOnly: true },
+        { key: 'utmMedium', type: 'string', readOnly: true },
+        { key: 'utmCampaign', type: 'string', readOnly: true },
+        { key: 'referrer', type: 'string', readOnly: true },
+        { key: 'landingPath', type: 'string', readOnly: true },
+        { key: 'notes', type: 'string', required: false, maxLength: 4000 },
         {
           key: 'status',
           type: 'enum',
@@ -190,6 +211,7 @@ export class AdminInquiryService {
       where: { id },
       data: {
         status: dto.status,
+        notes: dto.notes === undefined ? undefined : dto.notes.trim() || null,
         handledAt:
           leavingNew && !existing.handledAt ? new Date() : existing.handledAt,
       },
@@ -377,6 +399,7 @@ export class AdminInquiryService {
       id: item.id,
       reference: item.reference,
       status: item.status,
+      notes: item.notes,
       handledAt: item.handledAt?.toISOString() ?? null,
       deletedAt: item.deletedAt?.toISOString() ?? null,
       updatedAt: item.updatedAt.toISOString(),
@@ -395,6 +418,13 @@ export class AdminInquiryService {
       message: item.message,
       source: item.source,
       projectKey: item.projectKey,
+      timeline: item.timeline,
+      utmSource: item.utmSource,
+      utmMedium: item.utmMedium,
+      utmCampaign: item.utmCampaign,
+      referrer: item.referrer,
+      landingPath: item.landingPath,
+      notes: item.notes,
       status: item.status,
       handledAt: item.handledAt?.toISOString() ?? null,
       isDeleted: item.deletedAt !== null,

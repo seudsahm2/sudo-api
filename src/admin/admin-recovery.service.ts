@@ -129,7 +129,11 @@ export class AdminRecoveryService {
     const match =
       admin && admin.isActive
         ? await this.prisma.adminRecoveryCode.findFirst({
-            where: { adminUserId: admin.id, codeHash: fingerprint, usedAt: null },
+            where: {
+              adminUserId: admin.id,
+              codeHash: fingerprint,
+              usedAt: null,
+            },
             select: { id: true, codeHash: true },
           })
         : null;

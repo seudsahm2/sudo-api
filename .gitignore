@@ -10,6 +10,9 @@ npm-debug.log*
 !.env.example
 !.env.test.integration.example
 
+# Uploaded app builds when no bucket is configured (APP_BUILDS_DIR)
+storage/
+
 # Local content dumps written by scripts/backup-content.ts
 backups/
 

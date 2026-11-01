@@ -41,6 +41,20 @@ export interface AdminSiteConfigModel {
   heroHeadline: string;
   positionTitle: string;
   positionBody: string;
+  socialTiktok: string | null;
+  socialInstagram: string | null;
+  socialFacebook: string | null;
+  socialX: string | null;
+  socialLinkedin: string | null;
+  socialYoutube: string | null;
+  whatsappNumber: string | null;
+  telegramHandle: string | null;
+  announcementText: string | null;
+  announcementLink: string | null;
+  analyticsDomain: string | null;
+  analyticsScriptUrl: string | null;
+  ogImageUrl: string | null;
+  announcementEnabled: boolean;
   isDeleted: boolean;
   deletedAt: string | null;
   createdAt: string;
@@ -55,6 +69,12 @@ export interface AdminSiteConfigListResponse {
     total: number;
     totalPages: number;
   };
+}
+
+/** Absent leaves a field alone; empty clears it. */
+function clearable(value?: string): string | null | undefined {
+  if (value === undefined) return undefined;
+  return value.trim() || null;
 }
 
 @Injectable()
@@ -96,6 +116,75 @@ export class AdminSiteConfigService {
           required: false,
           maxLength: 600,
         },
+        {
+          key: 'socialTiktok',
+          type: 'string',
+          required: false,
+          maxLength: 300,
+        },
+        {
+          key: 'socialInstagram',
+          type: 'string',
+          required: false,
+          maxLength: 300,
+        },
+        {
+          key: 'socialFacebook',
+          type: 'string',
+          required: false,
+          maxLength: 300,
+        },
+        { key: 'socialX', type: 'string', required: false, maxLength: 300 },
+        {
+          key: 'socialLinkedin',
+          type: 'string',
+          required: false,
+          maxLength: 300,
+        },
+        {
+          key: 'socialYoutube',
+          type: 'string',
+          required: false,
+          maxLength: 300,
+        },
+        {
+          key: 'whatsappNumber',
+          type: 'string',
+          required: false,
+          maxLength: 16,
+        },
+        {
+          key: 'telegramHandle',
+          type: 'string',
+          required: false,
+          maxLength: 33,
+        },
+        {
+          key: 'announcementText',
+          type: 'string',
+          required: false,
+          maxLength: 160,
+        },
+        {
+          key: 'announcementLink',
+          type: 'string',
+          required: false,
+          maxLength: 300,
+        },
+        {
+          key: 'analyticsDomain',
+          type: 'string',
+          required: false,
+          maxLength: 120,
+        },
+        {
+          key: 'analyticsScriptUrl',
+          type: 'string',
+          required: false,
+          maxLength: 300,
+        },
+        { key: 'ogImageUrl', type: 'string', required: false, maxLength: 500 },
+        { key: 'announcementEnabled', type: 'boolean', required: false },
         { key: 'deletedAt', type: 'datetime', readOnly: true },
         { key: 'createdAt', type: 'datetime', readOnly: true },
         { key: 'updatedAt', type: 'datetime', readOnly: true },
@@ -204,6 +293,20 @@ export class AdminSiteConfigService {
         heroHeadline: dto.heroHeadline,
         positionTitle: dto.positionTitle,
         positionBody: dto.positionBody,
+        socialTiktok: clearable(dto.socialTiktok),
+        socialInstagram: clearable(dto.socialInstagram),
+        socialFacebook: clearable(dto.socialFacebook),
+        socialX: clearable(dto.socialX),
+        socialLinkedin: clearable(dto.socialLinkedin),
+        socialYoutube: clearable(dto.socialYoutube),
+        whatsappNumber: clearable(dto.whatsappNumber),
+        telegramHandle: clearable(dto.telegramHandle),
+        announcementText: clearable(dto.announcementText),
+        announcementLink: clearable(dto.announcementLink),
+        analyticsDomain: clearable(dto.analyticsDomain),
+        analyticsScriptUrl: clearable(dto.analyticsScriptUrl),
+        ogImageUrl: clearable(dto.ogImageUrl),
+        announcementEnabled: dto.announcementEnabled,
       },
     });
 
@@ -411,6 +514,20 @@ export class AdminSiteConfigService {
     heroHeadline: string;
     positionTitle: string;
     positionBody: string;
+    socialTiktok: string | null;
+    socialInstagram: string | null;
+    socialFacebook: string | null;
+    socialX: string | null;
+    socialLinkedin: string | null;
+    socialYoutube: string | null;
+    whatsappNumber: string | null;
+    telegramHandle: string | null;
+    announcementText: string | null;
+    announcementLink: string | null;
+    analyticsDomain: string | null;
+    analyticsScriptUrl: string | null;
+    ogImageUrl: string | null;
+    announcementEnabled: boolean;
     deletedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
@@ -429,6 +546,20 @@ export class AdminSiteConfigService {
       heroHeadline: item.heroHeadline,
       positionTitle: item.positionTitle,
       positionBody: item.positionBody,
+      socialTiktok: item.socialTiktok,
+      socialInstagram: item.socialInstagram,
+      socialFacebook: item.socialFacebook,
+      socialX: item.socialX,
+      socialLinkedin: item.socialLinkedin,
+      socialYoutube: item.socialYoutube,
+      whatsappNumber: item.whatsappNumber,
+      telegramHandle: item.telegramHandle,
+      announcementText: item.announcementText,
+      announcementLink: item.announcementLink,
+      analyticsDomain: item.analyticsDomain,
+      analyticsScriptUrl: item.analyticsScriptUrl,
+      ogImageUrl: item.ogImageUrl,
+      announcementEnabled: item.announcementEnabled,
       deletedAt: item.deletedAt?.toISOString() ?? null,
       createdAt: item.createdAt.toISOString(),
       updatedAt: item.updatedAt.toISOString(),
@@ -449,6 +580,20 @@ export class AdminSiteConfigService {
     heroHeadline: string;
     positionTitle: string;
     positionBody: string;
+    socialTiktok: string | null;
+    socialInstagram: string | null;
+    socialFacebook: string | null;
+    socialX: string | null;
+    socialLinkedin: string | null;
+    socialYoutube: string | null;
+    whatsappNumber: string | null;
+    telegramHandle: string | null;
+    announcementText: string | null;
+    announcementLink: string | null;
+    analyticsDomain: string | null;
+    analyticsScriptUrl: string | null;
+    ogImageUrl: string | null;
+    announcementEnabled: boolean;
     deletedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
@@ -467,6 +612,20 @@ export class AdminSiteConfigService {
       heroHeadline: item.heroHeadline,
       positionTitle: item.positionTitle,
       positionBody: item.positionBody,
+      socialTiktok: item.socialTiktok,
+      socialInstagram: item.socialInstagram,
+      socialFacebook: item.socialFacebook,
+      socialX: item.socialX,
+      socialLinkedin: item.socialLinkedin,
+      socialYoutube: item.socialYoutube,
+      whatsappNumber: item.whatsappNumber,
+      telegramHandle: item.telegramHandle,
+      announcementText: item.announcementText,
+      announcementLink: item.announcementLink,
+      analyticsDomain: item.analyticsDomain,
+      analyticsScriptUrl: item.analyticsScriptUrl,
+      ogImageUrl: item.ogImageUrl,
+      announcementEnabled: item.announcementEnabled,
       isDeleted: item.deletedAt !== null,
       deletedAt: item.deletedAt?.toISOString() ?? null,
       createdAt: item.createdAt.toISOString(),

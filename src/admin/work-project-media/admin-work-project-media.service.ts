@@ -37,6 +37,8 @@ export interface AdminWorkProjectMediaModel {
   url: string;
   kind: string;
   caption: string | null;
+  pageLabel: string | null;
+  videoUrl: string | null;
   isDeleted: boolean;
   deletedAt: string | null;
   createdAt: string;
@@ -60,6 +62,8 @@ type MediaRow = {
   url: string;
   kind: string;
   caption: string | null;
+  pageLabel: string | null;
+  videoUrl: string | null;
   deletedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -87,6 +91,8 @@ export class AdminWorkProjectMediaService {
           options: [...WORK_PROJECT_MEDIA_KINDS],
         },
         { key: 'caption', type: 'string', required: false, maxLength: 160 },
+        { key: 'pageLabel', type: 'string', required: false, maxLength: 60 },
+        { key: 'videoUrl', type: 'string', required: false, maxLength: 500 },
         { key: 'deletedAt', type: 'datetime', readOnly: true },
         { key: 'createdAt', type: 'datetime', readOnly: true },
         { key: 'updatedAt', type: 'datetime', readOnly: true },
@@ -165,6 +171,8 @@ export class AdminWorkProjectMediaService {
           url: dto.url,
           kind: dto.kind ?? 'browser',
           caption: dto.caption?.trim() ? dto.caption.trim() : null,
+          pageLabel: dto.pageLabel?.trim() || null,
+          videoUrl: dto.videoUrl?.trim() || null,
         },
       }),
     );
@@ -220,6 +228,14 @@ export class AdminWorkProjectMediaService {
               : dto.caption.trim()
                 ? dto.caption.trim()
                 : null,
+          pageLabel:
+            dto.pageLabel === undefined
+              ? undefined
+              : dto.pageLabel.trim() || null,
+          videoUrl:
+            dto.videoUrl === undefined
+              ? undefined
+              : dto.videoUrl.trim() || null,
         },
       }),
     );
@@ -448,6 +464,8 @@ export class AdminWorkProjectMediaService {
       url: item.url,
       kind: item.kind,
       caption: item.caption,
+      pageLabel: item.pageLabel,
+      videoUrl: item.videoUrl,
       deletedAt: item.deletedAt?.toISOString() ?? null,
       createdAt: item.createdAt.toISOString(),
       updatedAt: item.updatedAt.toISOString(),
@@ -462,6 +480,8 @@ export class AdminWorkProjectMediaService {
       url: item.url,
       kind: item.kind,
       caption: item.caption,
+      pageLabel: item.pageLabel,
+      videoUrl: item.videoUrl,
       isDeleted: item.deletedAt !== null,
       deletedAt: item.deletedAt?.toISOString() ?? null,
       createdAt: item.createdAt.toISOString(),
